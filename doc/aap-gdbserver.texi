@@ -1,0 +1,948 @@
+\input texinfo   @c -*- texinfo -*-
+@c Embecosm Proxy GDB RSP Server Manual
+@c
+@c Copyright (C) 2009, 2015 Embecosm Limited
+@c
+@c Contributor Jeremy Bennett <jeremy.bennett@embecosm.com>
+@c
+@c This file is part of the Embecosm AAP GDB server and simulator
+@c
+@c This program is free software; you can redistribute it and/or modify it
+@c under the terms of the GNU General Public License as published by the Free
+@c Software Foundation; either version 3 of the License, or (at your option)
+@c any later version.
+@c
+@c This program is distributed in the hope that it will be useful, but WITHOUT
+@c ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+@c FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+@c more details.
+@c
+@c You should have received a copy of the GNU General Public License along
+@c with this program.  If not, see <http://www.gnu.org/licenses/>.
+@c
+@c
+@setfilename rsp-proxy.info
+@afourpaper
+@include version.texi
+@include config.texi
+@dircategory Embedded development
+@direntry
+* Rsp-proxy: The Embecosm Proxy GDB RSP Server
+@end direntry
+
+@copying
+This file documents the Embecosm Proxy GDB RSP Server, @value{RSPPROXY}.
+
+Copyright @copyright{} 2009 Embecosm Limited.
+
+@quotation
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.2 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.
+@end quotation
+@end copying
+
+@setchapternewpage on
+@settitle The Embecosm Proxy GDB RSP Server User Guide
+
+@syncodeindex fn cp
+@syncodeindex vr cp
+
+@titlepage
+@title The Embecosm Proxy GDB RSP Server
+@subtitle User Guide
+@author Jeremy Bennett
+@author Embecosm Limited
+@author Issue 1 for @value{RSPPROXY} @value{VERSION}
+
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+     
+Published by Embecosm Limited
+@end titlepage
+
+@contents
+
+@node Top
+@c Perhaps this should be the title of the document (but only for info,
+@c not for TeX).  Existing GNU manuals seem inconsistent on this point.
+@top Scope of this Document
+
+This document is the user guide for @value{RSPPROXY}, the Embecosm Proxy
+GDB RSP Server.
+
+@menu
+* About::
+* Installation::
+* Usage::
+* Configuration::
+* Example::
+
+* GNU Free Documentation License::  The license for this documentation
+* Index::
+@end menu
+
+@node About
+@chapter About the Embecosm Proxy GDB RSP Server
+
+@value{RSPPROXY} provides a server interface to allow GNU Debugger
+clients for bare metal remote targets (typical of the embedded world) to
+be tested before the actual target is available.
+
+Typically such targets are provided as models or interfaces to real
+silicon, and availability of a working target is the limiting step on
+delivery. The @value{RSPPROXY} allows the maximum testing to be carried
+out before the target is available, thus reducing time to delivery.
+
+@value{RSPPROXY} models the target as a bank of registers and one or
+more banks of (non-overlapping) memory. This is initialized from a
+configuration file and then accessed and modified through any RSP
+packets which access registers or memory.
+
+If the user requests, full tracing of packets can be enabled.
+
+@node Installation
+@chapter Installation
+@cindex installing @value{RSPPROXY}
+
+Installation follows standard GNU protocols.
+
+@menu
+* Preparation::
+* Configuring the Build::
+* Build and Install::
+* Known Issues::
+@end menu
+
+@node Preparation
+@section Preparation
+
+Unpack the software and create a @emph{separate} directory in which to
+build it:
+
+@example
+@kbd{tar jxf embecosm-esp7-rsp-proxy-@value{VERSION}.tar.bz2}
+@kbd{mkdir build-rsp-proxy}
+@kbd{cd build-rsp-proxy}
+@end example
+
+@node Configuring the Build
+@section Configuring the Build
+
+Configure the software using the @command{configure} script in the
+main directory.
+
+There several options available, all of which are standard
+to GNU @command{configure} scripts. Use @kbd{configure --help} to see
+all the options. The most useful is @code{--prefix} to specify a
+directory for installation of the tools.
+
+@node Build and Install
+@section Building and Installing
+The tool is then built with:
+
+@example
+@kbd{make all}
+@kbd{make install}
+@end example
+
+The main installation directory should have been specified using
+@code{--prefix} at configuration time. These commands will install the
+@value{RSPPROXY} tool in the @file{bin} sub-directory, 
+the example in the @file{share} sub-directory and this documentation in
+@command{info} format in the @file{share/info} sub-directory.
+
+@quotation Note
+Testing @value{RSPPROXY} with @kbd{make check} is not yet supported.
+@end quotation
+
+The documentation may be created and installed in alternative formats (PDF,
+Postscript, DVI, HTML) with for example:
+
+@example
+@kbd{make pdf}
+@kbd{make install-pdf}
+@end example
+
+@node Known Issues
+@section Known Problems and Issues
+@cindex problems
+@cindex known issues
+@cindex bugs
+The following problems and issues are known about with @value{RSPPROXY}
+@value{VERSION}. Notify other issues by email to
+@url{mailto:support@@embecosm.com}.
+
+@itemize @bullet
+@item
+There is no check that all the registers have been specified.
+
+@item
+A word is assumed to be 4 bytes
+
+@end itemize
+
+@node Usage
+@chapter Usage
+@cindex running @value{RSPPROXY}
+
+@menu
+* Starting @value{RSPPROXY}::
+* Terminating @value{RSPPROXY}::
+* Unsupported GDB Commands::
+@end menu
+
+@node Starting @value{RSPPROXY}
+@section Starting @value{RSPPROXY}
+@cindex starting @value{RSPPROXY}
+
+The general form of the command is:
+
+@example
+rsp-proxy @var{config-file} @var{port} [trace]
+@end example
+
+The @var{config-file} is a file specifying the initial configuration of
+@value{RSPPROXY}. The port is the TCP/IP port on which the server should
+listen. If the optional final @code{trace} argument is specified, the
+server will report on each RSP packet it sends and receives.
+
+The program acts as a RSP server, and will respond to RSP packets from a
+GDB client, using the information from the configuration file.
+
+@node Terminating @value{RSPPROXY}
+@section Terminating @value{RSPPROXY}
+@cindex terminating @value{RSPPROXY}
+
+There is no clean way of terminating @value{RSPPROXY}. Just kill it with
+@kbd{ctrl-C}.
+
+@node Unsupported GDB Commands
+@section Unsupported GDB Commands
+@cindex unsupported GDB commands
+@cindex GDB @command{stepi} command
+@cindex GDB @command{step} command
+@cindex GDB @command{next} command
+@cindex GDB @command{continue} command
+@cindex GDB @command{detach} command
+The only GDB commands which are supported are those which rely on
+accessing registers and memory. @value{RSPPROXY} will attempt to give
+meaningful response to other packets as far as is possible. For example
+step or continue packets will respond as though the program has
+immediately halted at a breakpoint without the program counter changing.
+
+This means that @command{stepi} and @command{continue} commands work
+fine, but @command{step} and @command{next} will hang, as the GDB client
+keeps stepping the target, looking for the program counter to advance.
+
+It is possible for clients to detach from the target (using the
+@command{detach} command) and then reattach using a new @command{target
+remote} command.
+
+@node Configuration
+@chapter Configuration
+@cindex configuring @value{RSPPROXY}
+
+The configuration file describes an initial state of the CPU registers
+and memory
+
+@menu
+* General Format::
+* Specifying Machine Properties::
+* Specifying Registers::
+* Specifying Memory Blocks::
+* Formal Syntax::
+@end menu
+
+@node General Format
+@section General Format
+
+The configuration file consists of three sections.
+
+@itemize @bullet
+@item
+A description of the machine properties, introduced by the keyword @code{NAME}.
+
+@item
+A description of the registers and their initial state, introduced by
+the keyword @code{REGISTERS}.
+
+@item
+A description of a memory block and its initial values, introduced by
+the keywords @code{BYTE MEMORY} or @code{WORD MEMORY}. This block may
+occur several times to describe multiple blocks, such as program memory,
+stack memory and static data.
+@end itemize
+
+The configuration is in free format. Comments may be introduced, C++
+style, by @code{//}.
+
+@quotation Note
+The C style quotation @code{/*} ... @code{*/} is @emph{not} supported
+@end quotation
+
+@node Specifying Machine Properties
+@section Specifying Machine Properties
+@cindex machine properties
+
+The machine properties section must appear first. The keyword, @code{NAME},
+is followed by a parenthesized, comma separate list containing a textual
+name for this configuration (in double quotation marks) and the
+endianness of the target specified by the keywords @code{BIG ENDIAN} or
+@code{LITTLE ENDIAN}.
+
+For example the configuration of a big endian OpenRISC 1000 target could
+be specified as:
+
+@example
+NAME ( "OpenRISC 1000", BIG ENDIAN)
+@end example
+
+@node Specifying Registers
+@section Specifying Registers
+@cindex register specification
+@cindex register, size
+@cindex register, number of
+
+The registers are specified immediately after the machine
+properties. The section is introduced by the keyword @code{REGISTERS}
+followed by the number of registers in parenthesis.
+
+This number should match the number of @dfn{real} registers specified in
+the GDB client's architecture definition. I.e not including any
+pseudo-registers. For example in the OpenRISC 1000 architecture, the
+real registers that GDB knows about are the 32 general purpose
+registers, the Previous Program Counter, the Next Program Counter and
+the Supervision Register, so its register specification starts as
+follows.
+
+@example
+REGISTERS (35)
+@end example
+
+This declaration is followed by a comma separated triple in braces
+(@code{@{} and @code{@}}) for each register. The triple specifies a name
+of the register (in double quotes), its width in bits and its initial
+value. The registers must be specified in the same order that they are
+specified in the GDB client architecture.
+
+The following example specifies the OpenRISC 1000 registers for a
+program about the execute the instruction at location 0x1030, with a
+stack pointer at 0x7eb4 and frame pointer at 0x7ebc, and return address
+(in the link register) of 0x12b0.
+
+@example
+REGISTERS ( 35 )
+@{ "gpr0", 32, 0 @}               // Always zero
+@{ "gpr1", 32, 0x7eb4 @}          // Stack pointer
+@{ "gpr2", 32, 0x7ebc @}          // Frame pointer
+@{ "gpr3", 32, 0 @}               // Start of argument registers
+@{ "gpr4", 32, 0 @}
+@{ "gpr5", 32, 0 @}
+@{ "gpr6", 32, 0 @}
+@{ "gpr7", 32, 0 @}
+@{ "gpr8", 32, 0 @}               // End of argument registers
+@{ "gpr9", 32, 0x12b0 @}          // Link register
+@{ "gpr10", 32, 0 @}
+
+... More general purpose registers initialized to zero ...
+
+@{ "gpr31", 32, 0 @}
+@{ "ppc",   32, 0x102c @}         // Previous program counter
+@{ "npc",   32, 0x1030 @}         // Next program counter
+@{ "sr",    32, 0 @}              // Supervision register
+@end example
+
+The bit size and initial value may be specified in octal, decimal or
+hexadecimal using the conventional C/C++ notation.
+
+@node Specifying Memory Blocks
+@section Specifying Memory Blocks
+@cindex memory specification
+
+The specification of memory blocks follows the machine description and
+register specification. Multiple blocks may be specified.
+
+Memory is assumed to be byte addressed. It may be initialized as either
+bytes or words (in which case the endianness is taken into account).
+
+@subsection Specifying Memory in Bytes
+@cindex memory, byte size
+
+Byte memory is specified by the keywords @code{BYTE MEMORY} followed by
+a comma separated list within parentheses specifying the start address
+of the memory and its size in bytes.
+
+For example a 256 byte memory at location 0x8000 would be specified as
+follows.
+
+@example
+BYTE MEMORY (0x8000, 256)
+@end example
+
+This declaration is optionally followed by a comma separated list of bytes
+giving initial values of locations. Not all (or any) locations need be
+specified. Any unspecified will be uninitialized. There may not be more
+bytes specified than the size of the memory. Thus the first 12 bytes of
+the memory specified at location 0x8000 could be set to the ASCII
+representation of C string @code{"Hello World"} as follows.
+
+@example
+BYTE MEMORY (0x8000, 256)
+0x48, 0x65, 0x6c, 0x6c, 0x6f,
+0x20,
+0x57, 0x6f, 0x72, 0x6c, 0x64,
+0x00
+@end example
+
+The byte list ends at the end of file, or the start of the next memory
+block specification.
+
+@subsection Specifying Memory in Words
+@cindex memory, word size
+
+Word memory is specified by the keywords @code{WORD MEMORY} followed by
+a comma separated list within parentheses specifying the start address
+of the memory and its size in bytes.
+
+@quotation Note
+The size is still in @emph{bytes}, even though this is word memory.
+@end quotation
+
+For example a 0x3a0 byte long memory at location 0x1000 would be specified as
+follows.
+
+@example
+WORD MEMORY (0x1000, 0x3a0)
+@end example
+
+This declamation is optionally followed by a comma separated list of words
+giving initial values of locations. These will be stored in bytes of
+memory according to the endianness specified in the machine description.
+
+@quotation Note
+Words are assumed to be 4 bytes long. This is a limitation of the
+current implementation.
+@end quotation
+
+As with byte memory, not all (or any) locations need be specified. Any
+unspecified will be uninitialized. There may not be more words specified
+than the size of the memory. The memory specified at location 0x1000
+could be initialized with an OpenRISC 1000 program image as follows:
+
+@example
+WORD MEMORY (0x1000, 0x3a0)
+0x9c21fff8, 0xd4011000, 0x9c410008, 0xd7e21ffc,
+0x15000001, 0x84410000, 0x44004800, 0x9c210008,
+0x9c21fff8, 0xd4011000, 0x9c410008, 0xd7e21ffc,
+0x15000004, 0x84410000, 0x44004800, 0x9c210008,
+
+... lots more similar ...
+
+0x07ffffb0, 0x15000000, 0x9c60002a, 0x07ffff74,
+0x15000000, 0x18600000, 0xa86313bd, 0x07ffffa9,
+0x15000000, 0x07ffffe3, 0x15000000, 0x8562fffc,
+0x85210000, 0x84410004, 0x44004800, 0x9c21000c
+@end example
+
+The word list ends at the end of file, or the start of the next memory
+block specification.
+
+@node Formal Syntax
+@section Formal Syntax
+@cindex BNF syntax
+
+The syntax of the configuration file in Backus-Naur Form (BNF) is:
+
+@multitable {@var{memoryClauseList}} {->} {@var{memoryClause} | @var{memoryClause} @var{memoryClauseList}}
+
+@item @var{description}
+@tab -> 
+@tab @var{nameClause} @var{registerClause} @var{memoryClauseList}
+
+@item @var{nameClause}
+@tab ->
+@tab @code{NAME} @code{(} @var{nameParams} @code{)}
+
+@item @var{nameParams}
+@tab ->
+@tab @var{string} @code{,} @var{endianness}
+
+@item @var{endianness}
+@tab ->
+@tab @code{LITTLE ENDIAN} | @code{BIG ENDIAN}
+
+@item @var{registerClause}
+@tab ->
+@tab @code{REGISTERS} @code{(} @var{number} @code{)} @var{registerList}
+
+@item @var{registerList}
+@tab ->
+@tab @var{register} | @var{register} @var{registerList}
+
+@item @var{register}
+@tab ->
+@tab @code{@{} @var{string} @code{,} @var{number} @code{,} @var{number} @code{@}}
+
+@item @var{memoryClauseList}
+@tab ->
+@tab @var{memoryClause} | @var{memoryClause} @var{memoryClauseList}
+
+@item @var{memoryClause}
+@tab ->
+@tab @var{byteMemoryClause} | @var{wordMemoryClause}
+
+@item @var{byteMemoryClause}
+@tab ->
+@tab @code{BYTE MEMORY} @code{(} @var{memoryParams} @code{)} @var{memoryValues}
+
+@item @var{wordMemoryClause}
+@tab ->
+@tab @code{WORD MEMORY} @code{(} @var{memoryParams} @code{)} @var{memoryValues}
+
+@item @var{memoryParams}
+@tab ->
+@tab @var{number} @code{,} @var{number}
+
+@item @var{memoryValues}
+@tab ->
+@tab @var{number} | @var{number} @code{,} @var{memoryValues}
+
+@end multitable
+
+Comments are introduced by @code{//} and last to the end of line C++
+style.
+
+@node Example
+@chapter Example
+
+The @code{example} directory within the distribution contains an example
+configuration file, for a big-endian OpenRISC 1000. It represents the target
+during the execution of a simple test program.
+
+@menu
+* Overview::
+* Example Configuration File::
+* Typical Output::
+@end menu
+
+@node Overview
+@section Overview
+@cindex example, source code
+
+The main source code file, @file{hello.c} defines a program to print out
+some strings and perform a simple calculation.
+
+@example
+#include "utils.h"
+
+void level2() @{
+  simexit( 42 );
+@}
+
+void level1() @{
+  level2();
+@}
+
+main()
+@{
+  simputs ("Hello World!\n");
+  simputs ("The answer is ");
+  simputn (6 * 7);
+  simputs ("\n");
+  level1();
+@}
+@end example
+
+This program runs under the control of a simple bootloader, stored at
+the reset vector location, 0x100.
+
+@example
+        .org    0x100           # The reset routine goes at 0x100
+
+        .global _start
+_start:
+        l.addi  r1,r0,0x7f00    # Set SP to value 0x7f00
+        l.addi  r2,r1,0x0       # FP and SP are the same
+        l.mfspr r3,r0,17        # Get SR value
+        l.ori   r3,r3,0x2       # Set TT exception enable bit
+        l.jal   _main           # Jump to main routine
+        l.mtspr r0,r3,17        # Enable exceptions (DELAY SLOT)
+@end example
+
+The bootloader establishes a stack (falling for the OpenRISC 1000) at
+location 0x7f00.
+
+Simple utility functions provide character, string and number output to
+a monitor. One of these is @code{simputs}.
+
+@example
+void  simputs( char *str )
+@{
+  int  i;
+
+  for( i = 0; str[i] != '\0' ; i++ )
+    @{
+      simputc( (int)(str[i]) );
+    @}
+@}       /* simputs() */
+@end example
+
+The code can be compiled using the OpenRISC 1000 GNU tool chain. However
+for convenience a compiled image, @file{hello}, is provided with the
+distribution.
+
+The code is loaded at address 0x1000. In this example, the code for
+@code{main} starts at 0x1338, for @code{simputs} at 0x113c and for
+@code{simputc} at 0x1020.
+
+@node Example Configuration File
+@section Example Configuration File
+@cindex example, configuration
+
+The example configuration file is in the file @file{or1k.cfg}. It
+represents the state of the target at the start of executing the code of
+@code{simputc}, called from @code{simputs}, following its first call
+from @code{main}.
+
+The stack frame is for @code{simputc}, with stack pointer 0x7eb4 and
+frame pointer 0x7ebc. The next instruction to be executed is at location
+0x1030 (immediately after the @code{simputc} function prologue). The
+return address, held in the link register, @code{gpr9}, is 0x12b0,
+within the code of @code{main}
+
+The machine description specifies this is an OpenRISC 1000 and
+big endian.
+
+@example
+NAME ( "OpenRISC 1000", BIG ENDIAN)
+@end example
+
+The register description specifies the 32 General Purpose Registers, the
+Next and Previous Program Counters and the Supervision Register. These
+are initialized to correspond to the program and stack described
+earlier.
+
+@example
+REGISTERS ( 35 )
+@{ "gpr0", 32, 0 @}               // Always zero
+@{ "gpr1", 32, 0x7eb4 @}          // Stack pointer
+@{ "gpr2", 32, 0x7ebc @}          // Frame pointer
+@{ "gpr3", 32, 0 @}               // Start of argument registers
+@{ "gpr4", 32, 0 @}
+@{ "gpr5", 32, 0 @}
+@{ "gpr6", 32, 0 @}
+@{ "gpr7", 32, 0 @}
+@{ "gpr8", 32, 0 @}               // End of argument registers
+@{ "gpr9", 32, 0x12b0 @}          // Link register
+@{ "gpr10", 32, 0 @}
+
+... More general purpose registers initialized to zero ...
+
+@{ "gpr31", 32, 0 @}
+@{ "ppc",   32, 0x102c @}         // Previous program counter
+@{ "npc",   32, 0x1030 @}         // Next program counter
+@{ "sr",    32, 0 @}              // Supervision register
+@end example
+
+There are four memory blocks.
+@itemize @bullet
+@item
+A block to specify the interrupt vectors, particularly the bootloader
+and the reset vector.
+
+@item
+A block to specify the main body of the code to be loaded at address
+0x1000.
+
+@item
+A block to specify the static data (strings) used by the program at
+address 0x13a0.
+
+@item
+A block to specify the current values on the stack frame growing down
+from 0x7f00.
+
+@end itemize
+
+The interrupt vector block specifies 256 bytes of zeros, followed by the
+interrupt vector code. The remainder of the interrupt vectors can be
+uninitialized, since we will not be analyzing them with GDB.
+
+@example
+WORD MEMORY (0x0, 0x1000)
+0x00000000, 0x00000000, 0x00000000, 0x00000000,
+0x00000000, 0x00000000, 0x00000000, 0x00000000,
+
+... 60 more similar lines ...
+
+0x00000000, 0x00000000, 0x00000000, 0x00000000,
+0x00000000, 0x00000000, 0x00000000, 0x00000000,
+0x9c207f00,                     // l.addi   r1,r0,0x7f00
+0x9c410000,                     // l.addi   r2,r1,0
+0xb4600011,                     // l.mfspr  r3,r0,0x11
+0xa8630002,                     // l.ori    r3,r3,0x2
+0x0400048a,                     // l.jal    <main>
+0xc0001811                      // l.mtspr  r0,r3,0x11
+@end example
+
+The main program image is a straight word dump in hex of the program
+image.
+
+@example
+WORD MEMORY (0x1000, 0x3a0)
+0x9c21fff8, 0xd4011000, 0x9c410008, 0xd7e21ffc,
+0x15000001, 0x84410000, 0x44004800, 0x9c210008,
+0x9c21fff8, 0xd4011000, 0x9c410008, 0xd7e21ffc,
+0x15000004, 0x84410000, 0x44004800, 0x9c210008,
+
+... lots more similar ...
+
+0x07ffffb0, 0x15000000, 0x9c60002a, 0x07ffff74,
+0x15000000, 0x18600000, 0xa86313bd, 0x07ffffa9,
+0x15000000, 0x07ffffe3, 0x15000000, 0x8562fffc,
+0x85210000, 0x84410004, 0x44004800, 0x9c21000c
+@end example
+
+The static data contains 3 strings used by the main program, ``Hello
+World!\n'', ``The answer is `` and ``\n''.
+
+@example
+// Static data
+BYTE MEMORY (0x13a0, 31)
+0x48,			// 'H'
+0x65,			// 'e'
+0x6c,			// 'l'
+0x6c,			// 'l'
+
+... 23 more characters ...
+
+0x20,			// ' '
+0x00,			// EOS
+0x0a,			// '\n'
+0x00			// EOS
+@end example
+
+The stack frame shows the top 80 words of the stack, which is sufficient
+to include the stack frames of @code{main}, @code{simputs} and
+@code{simputc}. Any values expected to have been stored on the frame,
+including frame pointer links and return addresses must be initialized
+correctly.
+
+@example
+WORD MEMORY (0x7eb0, 80)
+0x00000000,
+0x00007ef4,             // Current SP, holds pointer to prev (simputs) FP
+0x00000048,             // Start of simputc frame, arg to simputc (ASCII 'H')
+0x00001358,             // End of simputs frame, holds return address (in main)
+0x00007f00,             // Holds pointer to prev (main) FP
+0x00000000,
+0x00000000,
+0x00000048,             // Argument to pass to simputc (ASCII 'H')
+0x00000000,
+0x000013a0,             // Temporary value of str
+0x000013a0,             // Temporary value of &str[i]
+0x00000048,             // str[i]
+0x00000000,
+0x000013a0,             // Value of str
+0x000013a0,             // Value of &str[i]
+0x00000000,             // Value of i
+0x000013a0,             // Start of simputs frame, arg to simputs (str)
+0x00000118,             // End of main frame, holds return address (in start)
+0x00007f00,             // Start of main frame, holds pointer to prev (start) FP
+0x00000000
+@end example
+
+@node Typical Output
+@section Typical Output
+@cindex example, typical output
+
+In one window, change to the example directory and start @value{RSPPROXY}
+with the example configuration file @file{or1k.cfg} on port 51000 with
+tracing enabled.
+
+@example
+rsp-proxy or1k.cfg 51000 trace
+@end example
+
+@value{RSPPROXY} reports it is listening:
+
+@example
+Listening for RSP on port 51000
+@end example
+
+In a second window, change to the example directory and start OpenRISC
+1000 GDB. Load the symbols from the @file{hello} executable
+
+@example
+or32-uclinux-gdb
+Building automata... done, num uncovered: 0/216.
+Parsing operands data... done.
+GNU gdb 6.8
+Copyright (C) 2008 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+and "show warranty" for details.
+This GDB was configured as "--host=i686-pc-linux-gnu --target=or32-uclinux".
+(gdb) file hello
+Reading symbols from rsp-proxy/example/hello...done.
+(gdb) 
+@end example
+
+Now connect to @value{RSPPROXY} using the GDB @command{target
+remote} command.
+
+@example
+(gdb) target remote :51000
+Remote debugging using :51000
+simputc (c=72) at utils.c:61
+61        __asm__ __volatile__ ( "\tl.nop\t%0" : : "K"( NOP_PUTC ));
+(gdb) 
+@end example
+
+In the window running @value{RSPPROXY}, a trace of the RSP packets
+exchanged is shown, since @value{RSPPROXY} was started with the
+@command{trace} option:
+
+@example
+RSP trace: getPkt: RSP packet:  10 chars, "qSupported"
+RSP trace: putPkt: RSP packet:  14 chars, "PacketSize=119"
+RSP trace: getPkt: RSP packet:   1 chars, "?"
+RSP trace: putPkt: RSP packet:   3 chars, "S05"
+RSP trace: getPkt: RSP packet:   4 chars, "Hc-1"
+RSP trace: putPkt: RSP packet:   2 chars, "OK"
+RSP trace: getPkt: RSP packet:   2 chars, "qC"
+RSP trace: putPkt: RSP packet:   3 chars, "QC1"
+RSP trace: getPkt: RSP packet:   8 chars, "qOffsets"
+RSP trace: putPkt: RSP packet:  19 chars, "Text=0;Data=0;Bss=0"
+RSP trace: getPkt: RSP packet:   3 chars, "Hg1"
+RSP trace: putPkt: RSP packet:   2 chars, "OK"
+RSP trace: getPkt: RSP packet:   1 chars, "g"
+RSP trace: putPkt: RSP packet: 280 chars, "0000000000007eb400007ebc000000000000
+000000000000000000000000000000000000000012b000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000102c000010300
+0000000"
+RSP trace: getPkt: RSP packet:   7 chars, "m1020,4"
+RSP trace: putPkt: RSP packet:   8 chars, "9c21fff8"
+RSP trace: getPkt: RSP packet:   7 chars, "m1024,4"
+RSP trace: putPkt: RSP packet:   8 chars, "d4011000"
+RSP trace: getPkt: RSP packet:   7 chars, "m1028,4"
+RSP trace: putPkt: RSP packet:   8 chars, "9c410008"
+RSP trace: getPkt: RSP packet:   7 chars, "m102c,4"
+RSP trace: putPkt: RSP packet:   8 chars, "d7e21ffc"
+RSP trace: getPkt: RSP packet:   7 chars, "m102c,4"
+RSP trace: putPkt: RSP packet:   8 chars, "d7e21ffc"
+RSP trace: getPkt: RSP packet:   7 chars, "m7eb8,4"
+RSP trace: putPkt: RSP packet:   8 chars, "00000048"
+RSP trace: getPkt: RSP packet:   9 chars, "qSymbol::"
+RSP trace: putPkt: RSP packet:   2 chars, "OK"
+@end example
+
+There is an initial exchange of packets to establish the characteristics
+of the target. @value{RSPPROXY} mimics a bare metal target, so there is
+only ever one thread. For simplicity no shifting of code sections is
+permitted.
+
+A @code{g} packets is a request for register values, which are returned
+according to the values specified in the configuration file.
+
+Lastly is a group of @code{m} packets to read memory, as the GDB server
+analyzes the function prologue of the code at its stopped location and
+obtains data from the stack frame. The values returned are taken from
+the initial values set in the configuration file.
+
+At this point, any GDB command which relies only on reading or writing
+memory or registers may be used. For example the argument to
+@code{simputs}, @code{c} may be printed as a character:
+
+@example
+(gdb) print (char)c
+$2 = 72 'H'
+(gdb) 
+@end example
+
+The @value{RSPPROXY} window will show a @code{m} packed used to read the
+value from the stack
+
+@example
+RSP trace: getPkt: RSP packet:   7 chars, "m7eb8,4"
+RSP trace: putPkt: RSP packet:   8 chars, "00000048"
+@end example
+
+The values used to initialize the stack correspond to a valid stack
+frame.
+
+@example
+(gdb) backtrace
+#0  simputc (c=72) at utils.c:61
+#1  0x000012b0 in simputs (str=0x13a0 "Hello World!\n") at utils.c:109
+#2  0x00001358 in main () at hello.c:44
+#3  0x00000118 in _start ()
+(gdb) 
+@end example
+
+The registers have their expected values
+
+@example
+(gdb) info registers gpr1 gpr2 gpr9 ppc npc
+gpr1           0x7eb4   0x7eb4
+gpr2           0x7ebc   0x7ebc
+gpr9           0x12b0   4784
+ppc            0x102c   0x102c <simputc+12>
+npc            0x1030   0x1030 <simputc+16>
+(gdb) 
+@end example
+
+The code can be disassembled, to check that the image specified in the
+configuration is as expected.
+
+@example
+(gdb) disas simputc
+Dump of assembler code for function simputc:
+0x00001020 <simputc+0>: l.addi   r1,r1,-8
+0x00001024 <simputc+4>: l.sw     0(r1),r2
+0x00001028 <simputc+8>: l.addi   r2,r1,8
+0x0000102c <simputc+12>:        l.sw     -4(r2),r3
+0x00001030 <simputc+16>:        l.nop    4
+0x00001034 <simputc+20>:        l.lwz    r2,0(r1)
+0x00001038 <simputc+24>:        l.jr     r9
+0x0000103c <simputc+28>:        l.addi   r1,r1,8
+End of assembler dump.
+(gdb) 
+@end example
+
+All register and memory locations are writable. For example we could
+set the argument to @code{simputc}, @code{c}, held at offset -4 on the
+current frame, to a different value.
+
+@example
+(gdb) set *((int *)$fp - 1) = 'X'
+(gdb) backtrace
+#0  simputc (c=88) at utils.c:61
+#1  0x000012b0 in simputs (str=0x13a0 "Hello World!\n") at utils.c:109
+#2  0x00001358 in main () at hello.c:44
+#3  0x00000118 in _start ()
+(gdb) print (char)c
+$2 = 88 'X'
+(gdb) 
+@end example
+
+@node  GNU Free Documentation License
+@chapter GNU Free Documentation License
+@cindex license for @value{RSPPROXY}
+
+@include fdl-1.2.texi
+
+@node Index
+
+@unnumbered Index
+
+@printindex cp
+
+@bye

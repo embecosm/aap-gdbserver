@@ -1,0 +1,8 @@
+# Editor backup files
+*~
+# Generated files
+*.o
+*.a
+*.so
+*.la
+*.lo

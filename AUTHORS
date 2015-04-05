@@ -1,0 +1,17 @@
+# GDB Server and Simulator for An Abstract Processor
+
+## Authors
+
+AAP was conceived and specified by Simon Cook <simon.cook@embecosm.com>
+
+The simulator and Remote Serial Protocol server were written by Dr Jeremy
+Bennett <jeremy.bennett@embecosm.com>.  It is based on the code for the
+Embecosm Proxy GDB RSP Server (www.embecosm.com/resources/software/#ESP7)
+
+Embecosm is a company providing services developing open source compiler tool
+chains and silicon chip models for embedded software development.
+
+## Copying
+
+This software is licensed under the GNU General Public License (GPL). Full
+details of the GPL can be found in the file COPYING

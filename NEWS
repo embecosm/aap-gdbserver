@@ -1,0 +1,24 @@
+		    Embecosm GNU Debugger Proxy RSP Server
+		    ======================================
+
+$Id: NEWS 485 2009-06-30 18:30:56Z jeremy $
+
+
+NEWS
+====
+
+Version 1.1 published 30 June, 2009.
+- comprehensive user guide added
+- RSP packet trace output tidied
+
+Version 1.0 published 12 April, 2009.
+- first release, but with minimal user guide
+
+Version 0.1 completed 4 April, 2009.
+- experimental alpha version
+
+COPYING
+=======
+
+This software is licensed under the GNU General Public License (GPL). Full
+details of the GPL can be found in the file COPYING
