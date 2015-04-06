@@ -5,7 +5,7 @@
 # Contributor Jeremy Bennett <jeremy.bennett@embecosm.com>
 #
 # This file is part of the Embecosm AAP GDB server and simulator.
-# 
+#
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
 # Software Foundation; either version 3 of the License, or (at your option)
@@ -27,9 +27,10 @@ aap_server_SOURCES = GdbServer.cpp     \
                      MpHash.h          \
                      RspConnection.cpp \
                      RspConnection.h   \
-                     RspProxyMain.cpp  \
-                     RspProxyMain.h    \
                      RspPacket.cpp     \
                      RspPacket.h       \
+                     ServerMain.cpp    \
                      Utils.cpp         \
                      Utils.h
+
+aap_server_LDADD = libaapsim.la

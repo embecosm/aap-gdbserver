@@ -29,13 +29,20 @@ AC_CONFIG_HEADERS([config.h])
 AC_COPYRIGHT([Copyright (C) 2009, 2015 Embecosm Limited])
 
 # Make sure we are using a reasonably recent autoconf version
-AC_PREREQ(2.59)
+AC_PREREQ(2.69)
+
+# Put configuration macros out of the way
+AC_CONFIG_MACRO_DIR([m4])
+
+# We need Libtool
+LT_INIT
 
 # We're using C++
 AC_LANG(C++)
 
-# C++ compiler and install utility
+# C++11compiler and install utility
 AC_PROG_CXX
+AX_CXX_COMPILE_STDCXX_11
 AC_PROG_INSTALL
 
 # This is GNU compliant source and uses GNU libraries

@@ -1,10 +1,10 @@
-// GDB RSP server: implementation
+// GDB RSP server: definition
 
-// Copyright (C) 2009  Embecosm Limited <info@embecosm.com>
+// Copyright (C) 2009, 2015 Embecosm Limited <www.embecosm.com>
 
 // Contributor Jeremy Bennett <jeremy.bennett@embecosm.com>
 
-// This file is part of the Embecosm Proxy RSP server.
+// This file is part of the Embecosm AAP GDB server and simulator.
 
 // This program is free software: you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License as published by
@@ -27,6 +27,7 @@
 #include <cstring>
 
 #include "GdbServer.h"
+#include "MemAddr.h"
 #include "Utils.h"
 
 using std::cout;
@@ -35,32 +36,29 @@ using std::dec;
 using std::endl;
 using std::hex;
 
-//-----------------------------------------------------------------------------
 //! Constructor for the GDB RSP server.
 
 //! Allocate a packet data structure and a new RSP connection.
 
-//! @param[in] rspPort  RSP port to use.
-//! @param[in] cpu      The simulated CPU
-//-----------------------------------------------------------------------------
-GdbServer::GdbServer (int      rspPort,
-		      SimProc *_cpu) :
-  cpu (_cpu)
+//! @param[in] _port  RSP port to use.
+//! @param[in] _sim   The simulated CPU
+GdbServer::GdbServer (int      _port,
+		      AapSim * _sim) :
+  mSim (_sim),
+  mLastException (AapSim::Res::NONE)
 {
   // Packet size should allow enough room for every register + 1 byte for an
   // end of string marker (our convenience). Assume worst case uint64_t regs.
-  pkt       = new RspPacket ((sizeof (uint64_t) * cpu->getNumRegs ()) + 1);
-  rsp       = new RspConnection (rspPort, cpu->isTraceOn ());
+  pkt       = new RspPacket ((sizeof (uint64_t) * mSim->numRegs ()) + 1);
+  rsp       = new RspConnection (rspPort, false);
   mpHash    = new MpHash ();
 
 }	// GdbServer ()
 
 
-//-----------------------------------------------------------------------------
 //! Destructor
 
 //! Free up data structures
-//-----------------------------------------------------------------------------
 GdbServer::~GdbServer ()
 {
   delete  mpHash;
@@ -70,11 +68,9 @@ GdbServer::~GdbServer ()
 }	// ~GdbServer
 
 
-//-----------------------------------------------------------------------------
 //! Main loop to listen for RSP requests
 
 //! This only terminates if there was an error.
-//-----------------------------------------------------------------------------
 void
 GdbServer::rspServer ()
 {
@@ -99,7 +95,6 @@ GdbServer::rspServer ()
 }	// rspServer ()
 
 
-//-----------------------------------------------------------------------------
 //! Deal with a request from the GDB client session
 
 //! In general, apart from the simplest requests, this function replies on
@@ -110,7 +105,6 @@ GdbServer::rspServer ()
 //!       reply.
 
 //! @param[in] pkt  The received RSP packet
-//-----------------------------------------------------------------------------
 void
 GdbServer::rspClientRequest ()
 {
@@ -130,7 +124,7 @@ GdbServer::rspClientRequest ()
 
     case '?':
       // Return last signal ID
-      rspReportException ();
+      rspReportException (mLastException);
       return;
 
     case 'A':
@@ -153,15 +147,11 @@ GdbServer::rspClientRequest ()
       return;
 
     case 'c':
-      // Continue. In this proxy we immediately report we have hit an
-      // exception.
-      rspReportException ();
-      return;
-
     case 'C':
-      // Continue with signal (in the packet). In this proxy we immediately
-      // report we have hit an exception.
-      rspReportException ();
+      // Run.  We don't have signals, so we can
+      // do C here as well.
+
+      rspReportException (mSim->run ());
       return;
 
     case 'd':
@@ -197,18 +187,6 @@ GdbServer::rspClientRequest ()
       // silently and just reply "OK"
       pkt->packStr ("OK");
       rsp->putPkt (pkt);
-      return;
-
-    case 'i':
-      // Single cycle step. In this proxy we immediately report we have hit an
-      // exception.
-      rspReportException ();
-      return;
-
-    case 'I':
-      // Single cycle step with signal. In this proxy we immediately report we
-      // have hit an exception.
-      rspReportException ();
       return;
 
     case 'k':
@@ -255,16 +233,15 @@ GdbServer::rspClientRequest ()
       // Restart the program being debugged. Nothing to do in the proxy.
       return;
 
+    case 'i':
     case 's':
-      // Single step one machine instruction. In this proxy we immediately
-      // report we have hit an exception.
-      rspReportException ();
-      return;
-
+    case 'I':
     case 'S':
-      // Single step one machine instruction with signal. In this proxy we
-      // immediately report we have hit an exception.
-      rspReportException ();
+      // Single step one machine instruction.  We don't have signals, we can
+      // do S here as well, and since everything is single cycle, for now we
+      // support i/I as well.
+
+      rspReportException (mSim->step ());
       return;
 
     case 't':
@@ -308,19 +285,37 @@ GdbServer::rspClientRequest ()
 }	// rspClientRequest ()
 
 
-//-----------------------------------------------------------------------------
 //! Send a packet acknowledging an exception has occurred
 
 //! This is sent immediately we continue or step in any way. The only signal
 //! we ever see in this implementation is a proxy trap.
-//-----------------------------------------------------------------------------
+
+//! @param[in] res  The simulator result
 void
-GdbServer::rspReportException ()
+GdbServer::rspReportException (AapSim::Res  res)
 {
+  int sig = GDB_SIGNAL_NONE;
+
+  mLastException = res;
+
+  switch (res)
+    {
+    case AapSim::EXIT:    sig = GDB_SIGNAL_EMT;
+    case AapSim::COUT:    sig = GDB_SIGNAL_EMT;
+    case AapSim::CERR:    sig = GDB_SIGNAL_EMT;
+    case AapSim::BREAK:   sig = GDB_SIGNAL_TRAP;
+    case AapSim::ILLINST: sig = GDB_SIGNAL_ILL;
+    case AapSim::ILLOPND: sig = GDB_SIGNAL_ILL;
+    case AapSim::MEMERR:  sig = GDB_SIGNAL_SEGV;
+    case AapSim::REGERR:  sig = GDB_SIGNAL_ILL;
+    case AapSim::NONE:    sig = GDB_SIGNAL_NONE;
+    default:              sig = GDB_SIGNAL_ABRT;
+    }
+
   // Construct a signal received packet
   pkt->data[0] = 'S';
-  pkt->data[1] = Utils::hex2Char (TARGET_SIGNAL_TRAP >> 4);
-  pkt->data[2] = Utils::hex2Char (TARGET_SIGNAL_TRAP % 16);
+  pkt->data[1] = Utils::hex2Char (sig >> 4);
+  pkt->data[2] = Utils::hex2Char (sig % 16);
   pkt->data[3] = '\0';
   pkt->setLen (strlen (pkt->data));
 
@@ -329,38 +324,28 @@ GdbServer::rspReportException ()
 }	// rspReportException ()
 
 
-//-----------------------------------------------------------------------------
 //! Handle a RSP read all registers request
 
 //! This means getting the value of each simulated register and packing it
 //! into the packet.
 
 //! Each byte is packed as a pair of hex digits.
-//-----------------------------------------------------------------------------
 void
 GdbServer::rspReadAllRegs ()
 {
   int  pktSize = 0;
 
-  // The registers. GDB client expects them to be packed according to target
-  // endianness.
-  for (int  regNum = 0; regNum < cpu->getNumRegs (); regNum++)
+  // The 16-bit general registers. GDB client expects them to be packed
+  // according to target endianness (which is little).
+  for (int  regNum = 0; regNum < mSim->numRegs (); regNum++)
     {
-      int  bitSize;			// Size of reg in bits
-
-      if (cpu->getRegSize (regNum, bitSize))
-	{
-	  uint64_t  value;
-
-	  if (cpu->readReg (regNum, value))
-	    {
-	      int  byteSize = (bitSize + 7) /8;
-	      Utils::val2Hex (value, &(pkt->data[pktSize]), byteSize,
-			      cpu->isLittleEndian());
-	      pktSize += byteSize * 2;	// 2 chars per hex digit
-	    }
-	}
+      Utils::val2Hex (mSim->reg (regNum), &(pkt->data[pktSize]), 2, true);
+      pktSize += 4;	// 2 chars per hex digit
     }
+
+  // Add 32-bit PC on the end
+  Utils::val2Hex (mSim->pc (), &(pkt->data[pktSize]), 4, true);
+  pktSize += 8;	// 2 chars per hex digit
 
   // Finalize the packet and send it
   pkt->data[pktSize] = 0;
@@ -370,37 +355,21 @@ GdbServer::rspReadAllRegs ()
 }	// rspReadAllRegs ()
 
 
-//-----------------------------------------------------------------------------
 //! Handle a RSP write all registers request
 
 //! Each value is written into the simulated register.
-//-----------------------------------------------------------------------------
 void
 GdbServer::rspWriteAllRegs ()
 {
   int  pktSize = 0;
 
-  // The registers
-  for (int  r = 0; r < cpu->getNumRegs (); r++)
+  // The 16-bit general registers.  Endianness is little-endian.
+  for (int  r = 0; r < mSim->numRegs (); r++)
     {
-      int  bitSize;			// Size of reg in bits
-
-      if (cpu->getRegSize (r, bitSize))
-	{
-	  int  byteSize = (bitSize + 7) /8;
-	  int  value    = Utils::hex2Val (&(pkt->data[pktSize]), byteSize,
-					  cpu->isLittleEndian());
-	  pktSize += byteSize * 2;	// 2 chars per hex digit
-
-	  if (!cpu->writeReg (r, value))
-	    {
-	      // Error ack and give up
-	      pkt->packStr ("E01");
-	      rsp->putPkt (pkt);
-	      return;
-	    }
-	}
+      mSim->reg (r, Utils::hex2Val (&(pkt->data[pktSize]), 2, true));
+      pktSize += 4;	// 2 chars per hex digit
     }
+  mSim->pc (Utils::hex2Val (&(pkt->data[pktSize]), 4, true)
 
   // Acknowledge OK
   pkt->packStr ("OK");
@@ -409,7 +378,6 @@ GdbServer::rspWriteAllRegs ()
 }	// rspWriteAllRegs ()
 
 
-//-----------------------------------------------------------------------------
 //! Handle a RSP read memory (symbolic) request
 
 //! Syntax is:
@@ -420,15 +388,13 @@ GdbServer::rspWriteAllRegs ()
 //! digits.
 
 //! The length given is the number of bytes to be read.
-//-----------------------------------------------------------------------------
 void
 GdbServer::rspReadMem ()
 {
-  unsigned int    addr;			// Where to read the memory
+  unsigned int    gdbAddr;		// Where to read the memory
   int             len;			// Number of bytes to read
-  int             off;			// Offset into the memory
 
-  if (2 != sscanf (pkt->data, "m%x,%x:", &addr, &len))
+  if (2 != sscanf (pkt->data, "m%x,%x:", &gdbAddr, &len))
     {
       cerr << "Warning: Failed to recognize RSP read memory command: "
 		<< pkt->data << endl;
@@ -445,12 +411,15 @@ GdbServer::rspReadMem ()
       len = (pkt->getBufSize() - 1) / 2;
     }
 
+  int      off;			// Offset into the memory
+  MemAddr  addr (getSpace (gdbAddr), getLocation (gdbAddr));
+
   // Refill the buffer with the reply
   for (off = 0; off < len; off++)
     {
       uint8_t  ch;
 
-      if (cpu->readMem (addr + off, ch))
+      if (mSim->readMem (addr + off, ch))
 	{
 	  pkt->data[off * 2]     = Utils::hex2Char(ch >>   4);
 	  pkt->data[off * 2 + 1] = Utils::hex2Char(ch &  0xf);
@@ -470,7 +439,6 @@ GdbServer::rspReadMem ()
 }	// rsp_read_mem ()
 
 
-//-----------------------------------------------------------------------------
 //! Handle a RSP write memory (symbolic) request
 
 //! Syntax is:
@@ -481,7 +449,6 @@ GdbServer::rspReadMem ()
 //! digits.
 
 //! The length given is the number of bytes to be written.
-//-----------------------------------------------------------------------------
 void
 GdbServer::rspWriteMem ()
 {
@@ -517,7 +484,7 @@ GdbServer::rspWriteMem ()
       uint8_t  nyb1 = Utils::char2Hex (symDat[off * 2]);
       uint8_t  nyb2 = Utils::char2Hex (symDat[off * 2 + 1]);
 
-      if (!cpu->writeMem (addr + off, (uint8_t)((nyb1 << 4) | nyb2)))
+      if (!mSim->writeMem (addr + off, (uint8_t)((nyb1 << 4) | nyb2)))
 	{
 	  pkt->packStr ("E01");		// Bad address
 	  rsp->putPkt (pkt);
@@ -531,7 +498,6 @@ GdbServer::rspWriteMem ()
 }	// rspWriteMem ()
 
 
-//-----------------------------------------------------------------------------
 //! Read a single register
 
 //! The registers follow the GDB sequence for OR1K: GPR0 through GPR31, PC
@@ -539,7 +505,6 @@ GdbServer::rspWriteMem ()
 //! sequence of bytes in target endian order.
 
 //! Each byte is packed as a pair of hex digits.
-//-----------------------------------------------------------------------------
 void
 GdbServer::rspReadReg ()
 {
@@ -557,19 +522,19 @@ GdbServer::rspReadReg ()
 
   // Get the relevant register. GDB client expects them to be packed according
   // to target endianness.
-  if (cpu->isValidReg (regNum))
+  if (mSim->isValidReg (regNum))
     {
       int  bitSize;			// Size of reg in bits
 
-      if (cpu->getRegSize (regNum, bitSize))
+      if (mSim->getRegSize (regNum, bitSize))
 	{
 	  uint64_t  value;
 
-	  if (cpu->readReg (regNum, value))
+	  if (mSim->readReg (regNum, value))
 	    {
 	      int  byteSize = (bitSize + 7) /8;
 	      Utils::val2Hex (value, pkt->data, byteSize,
-			      cpu->isLittleEndian());
+			      mSim->isLittleEndian());
 	    }
 	}
     }
@@ -589,7 +554,6 @@ GdbServer::rspReadReg ()
 }	// rspReadReg ()
 
 
-//-----------------------------------------------------------------------------
 //! Write a single register
 
 //! The registers follow the GDB sequence for OR1K: GPR0 through GPR31, PC
@@ -597,7 +561,6 @@ GdbServer::rspReadReg ()
 //! sequence of bytes in target endian order.
 
 //! Each byte is packed as a pair of hex digits.
-//-----------------------------------------------------------------------------
 void
 GdbServer::rspWriteReg ()
 {
@@ -615,17 +578,17 @@ GdbServer::rspWriteReg ()
     }
 
   // Set the relevant register
-  if (cpu->isValidReg (regNum))
+  if (mSim->isValidReg (regNum))
     {
       int  bitSize;			// Size of reg in bits
 
-      if (cpu->getRegSize (regNum, bitSize))
+      if (mSim->getRegSize (regNum, bitSize))
 	{
 	  int  byteSize = (bitSize + 7) /8;
 	  int  value    = Utils::hex2Val (valstr, byteSize,
-					  cpu->isLittleEndian());
+					  mSim->isLittleEndian());
 
-	  if (!cpu->writeReg (regNum, value))
+	  if (!mSim->writeReg (regNum, value))
 	    {
 	      pkt->packStr ("E01");	// Bad reg. Should not happen.
 	      rsp->putPkt (pkt);
@@ -649,9 +612,7 @@ GdbServer::rspWriteReg ()
 }	// rspWriteReg ()
 
 
-//-----------------------------------------------------------------------------
 //! Handle a RSP query request
-//-----------------------------------------------------------------------------
 void
 GdbServer::rspQuery ()
 {
@@ -761,11 +722,9 @@ GdbServer::rspQuery ()
 }	// rspQuery ()
 
 
-//-----------------------------------------------------------------------------
 //! Handle a RSP qRcmd request
 
 //! The actual command follows the "qRcmd," in ASCII encoded to hex
-//-----------------------------------------------------------------------------
 void
 GdbServer::rspCommand ()
 {
@@ -773,7 +732,7 @@ GdbServer::rspCommand ()
 
   Utils::hex2Ascii (cmd, &(pkt->data[strlen ("qRcmd,")]));
 
-  if (cpu->isTraceOn ())
+  if (mSim->isTraceOn ())
     {
       cout << "RSP trace: qCmd," << cmd << endl;
     }
@@ -787,9 +746,7 @@ GdbServer::rspCommand ()
 }	// rspCommand ()
 
 
-//-----------------------------------------------------------------------------
 //! Handle a RSP set request
-//-----------------------------------------------------------------------------
 void
 GdbServer::rspSet ()
 {
@@ -820,11 +777,9 @@ GdbServer::rspSet ()
 }	// rspSet ()
 
 
-//-----------------------------------------------------------------------------
 //! Handle a RSP 'v' packet
 
 //! These are commands associated with executing the code on the target
-//-----------------------------------------------------------------------------
 void
 GdbServer::rspVpkt ()
 {
@@ -910,7 +865,6 @@ GdbServer::rspVpkt ()
 }	// rspVpkt ()
 
 
-//-----------------------------------------------------------------------------
 //! Handle a RSP write memory (binary) request
 
 //! Syntax is:
@@ -922,7 +876,6 @@ GdbServer::rspVpkt ()
 
 //! The length given is the number of bytes to be written. The data buffer has
 //! already been unescaped, so will hold this number of bytes.
-//-----------------------------------------------------------------------------
 void
 GdbServer::rspWriteMemBin ()
 {
@@ -958,7 +911,7 @@ GdbServer::rspWriteMemBin ()
   // Write the bytes to memory.
   for (int i = 0; i < len; i++)
     {
-      if (!cpu->writeMem (addr + i, bindat[i]))
+      if (!mSim->writeMem (addr + i, bindat[i]))
 	{
 	  cerr << "Warning: attempt to write binary to non-existent address 0x"
 	       << hex << addr + 1 << dec << endl;
@@ -975,14 +928,13 @@ GdbServer::rspWriteMemBin ()
 }	// rspWriteMemBin ()
 
 
-//-----------------------------------------------------------------------------
 //! Handle a RSP remove breakpoint or matchpoint request
 
 //! This checks that the matchpoint was actually set earlier. For software
 //! (memory) breakpoints, the breakpoint is cleared from memory.
 
 //! @todo This doesn't work with icache/immu yet
-//-----------------------------------------------------------------------------
+
 void
 GdbServer::rspRemoveMatchpoint ()
 {
@@ -1019,7 +971,7 @@ GdbServer::rspRemoveMatchpoint ()
       // Software (memory) breakpoint
       if (mpHash->remove (type, addr, &instr))
 	{
-	  if (cpu->isTraceOn ())
+	  if (mSim->isTraceOn ())
 	    {
 	      cout << "RSP trace: software (memory) breakpoint removed from 0x"
 		   << hex << addr << dec << endl;
@@ -1039,7 +991,7 @@ GdbServer::rspRemoveMatchpoint ()
 
       for (int  i = 0 ; i < len; i++)
 	{
-	  if (!cpu->writeMem (addr + i, instrVec[i]))
+	  if (!mSim->writeMem (addr + i, instrVec[i]))
 	    {
 	      cerr << "Warning: failed to write memory when clearing "
 		      "breakpoint at 0x" << hex << addr + i << dec << endl;
@@ -1056,7 +1008,7 @@ GdbServer::rspRemoveMatchpoint ()
       // Hardware breakpoint
       if (mpHash->remove (type, addr, &instr))
 	{
-	  if (cpu->isTraceOn ())
+	  if (mSim->isTraceOn ())
 	    {
 	      cout << "Rsp trace: hardware breakpoint removed from 0x"
 		   << hex << addr << dec << endl;
@@ -1079,7 +1031,7 @@ GdbServer::rspRemoveMatchpoint ()
       // Write watchpoint
       if (mpHash->remove (type, addr, &instr))
 	{
-	  if (cpu->isTraceOn ())
+	  if (mSim->isTraceOn ())
 	    {
 	      cout << "RSP trace: write watchpoint removed from 0x"
 		   << hex << addr << dec << endl;
@@ -1102,7 +1054,7 @@ GdbServer::rspRemoveMatchpoint ()
       // Read watchpoint
       if (mpHash->remove (type, addr, &instr))
 	{
-	  if (cpu->isTraceOn ())
+	  if (mSim->isTraceOn ())
 	    {
 	      cout << "RSP trace: read watchpoint removed from 0x"
 		   << hex << addr << dec << endl;
@@ -1125,7 +1077,7 @@ GdbServer::rspRemoveMatchpoint ()
       // Access (read/write) watchpoint
       if (mpHash->remove (type, addr, &instr))
 	{
-	  if (cpu->isTraceOn ())
+	  if (mSim->isTraceOn ())
 	    {
 	      cout << "RSP trace: access (read/write) watchpoint removed "
 		      "from 0x" << hex << addr << dec << endl;
@@ -1198,7 +1150,7 @@ GdbServer::rspInsertMatchpoint ()
 
       for (int  i = 0 ; i < len; i++)
 	{
-	  if (!cpu->readMem (addr + i, instrVec[i]))
+	  if (!mSim->readMem (addr + i, instrVec[i]))
 	    {
 	      cerr << "Warnign: failed to read memory when setting breakpoint "
 		      "at 0x" << hex << addr + i << dec << endl;
@@ -1211,9 +1163,9 @@ GdbServer::rspInsertMatchpoint ()
       // byte)
       mpHash->add (type, addr, instr);
 
-      if (cpu->writeMem (addr, PROXY_TRAP_INSTR))
+      if (mSim->writeMem (addr, PROXY_TRAP_INSTR))
 	{
-	  if (cpu->isTraceOn ())
+	  if (mSim->isTraceOn ())
 	    {
 	      cout << "RSP trace: software (memory) breakpoint inserted at 0x"
 		   << hex << addr << dec << endl;
@@ -1235,7 +1187,7 @@ GdbServer::rspInsertMatchpoint ()
       // Hardware breakpoint
       mpHash->add (type, addr, 0);	// No instr for HW matchpoints
 
-      if (cpu->isTraceOn ())
+      if (mSim->isTraceOn ())
 	{
 	  cout << "RSP trace: hardware breakpoint set at 0x"
 	       << hex << addr << dec << endl;
@@ -1250,7 +1202,7 @@ GdbServer::rspInsertMatchpoint ()
       // Write watchpoint
       mpHash->add (type, addr, 0);	// No instr for HW matchpoints
 
-      if (cpu->isTraceOn ())
+      if (mSim->isTraceOn ())
 	{
 	  cout << "RSP trace: write watchpoint set at 0x"
 	       << hex << addr << dec << endl;
@@ -1265,7 +1217,7 @@ GdbServer::rspInsertMatchpoint ()
       // Read watchpoint
       mpHash->add (type, addr, 0);	// No instr for HW matchpoints
 
-      if (cpu->isTraceOn ())
+      if (mSim->isTraceOn ())
 	{
 	  cout << "RSP trace: read watchpoint set at 0x"
 	       << hex << addr << dec << endl;
@@ -1280,7 +1232,7 @@ GdbServer::rspInsertMatchpoint ()
       // Access (read/write) watchpoint
       mpHash->add (type, addr, 0);	// No instr for HW matchpoints
 
-      if (cpu->isTraceOn ())
+      if (mSim->isTraceOn ())
 	{
 	  cout << "RSP trace: access (read/write) watchpoint set at 0x"
 	       << hex << addr << dec << endl;

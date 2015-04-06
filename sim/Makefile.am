@@ -20,11 +20,15 @@
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+lib_LTLIBRARIES = libaapsim.la
+
+libaapsim_la_SOURCES = AapSim.h    \
+                       AapSim.cpp  \
+                       MemAddr.h   \
+                       MemAddr.cpp
+
 bin_PROGRAMS = aap-sim
 
-aap_sim_SOURCES = MemoryBlock.cpp \
-                  MemoryBlock.h   \
-                  Register.cpp    \
-                  Register.h      \
-                  SimProc.cpp     \
-                  SimProc.h
+aap_sim_SOURCES = SimMain.cpp
+
+aap_sim_LDADD = libaapsim.la

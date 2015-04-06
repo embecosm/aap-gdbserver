@@ -6,3 +6,5 @@
 *.so
 *.la
 *.lo
+# Automake cache
+autom4te.cache/

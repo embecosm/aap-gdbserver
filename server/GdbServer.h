@@ -1,11 +1,11 @@
 // ----------------------------------------------------------------------------
-// GDB RSP server: definition
+// GDB RSP server: declaration
 
-// Copyright (C) 2009  Embecosm Limited <info@embecosm.com>
+// Copyright (C) 2009, 2015 Embecosm Limited <www.embecosm.com>
 
 // Contributor Jeremy Bennett <jeremy.bennett@embecosm.com>
 
-// This file is part of the Embecosm Proxy RSP server.
+// This file is part of the Embecosm AAP GDB server and simulator.
 
 // This program is free software: you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License as published by
@@ -27,7 +27,7 @@
 
 #include <stdint.h>
 
-#include "SimProc.h"
+#include "AapSim.h"
 #include "MpHash.h"
 #include "RspConnection.h"
 #include "RspPacket.h"
@@ -44,8 +44,8 @@ class GdbServer
 public:
 
   // Constructor and destructor
-  GdbServer (int      rspPort,
-	     SimProc *_cpu);
+  GdbServer (int      _port,
+	     AapSim * _sim);
   ~GdbServer ();
 
   // Main loop to listen for and service RSP requests.
@@ -54,12 +54,20 @@ public:
 
 private:
 
-  //! Definition of GDB target signals.
+  //! Constants for the flag bits
+  MEMSPACE_CODE = 0x00000000;
+  MEMSPACE_DATA = 0x80000000;
+  MEMSPACE_MASK = 0x80000000;
 
-  //! Data taken from the GDB 6.8 source. Only those we use defined here.
-  enum TargetSignal {
-    TARGET_SIGNAL_NONE =  0,
-    TARGET_SIGNAL_TRAP =  5
+  //! Definition of GDB target signals.  Data taken from the GDB source. Only
+  //! those we use defined here.
+  enum class TargetSignal : int {
+    GDB_SIGNAL_NONE =  0,
+    GDB_SIGNAL_ILL  =  4,
+    GDB_SIGNAL_TRAP =  5,
+    GDB_SIGNAL_EMT  =  6,
+    GDB_SIGNAL_EMT  =  7,
+    GDB_SIGNAL_SEGV = 11
   };
 
   //! Constant for a thread id
@@ -69,7 +77,7 @@ private:
   static const uint8_t  PROXY_TRAP_INSTR = 0xa5;
 
   //! Out associated simulated CPU
-  SimProc  *cpu;
+  AapSim  *mSim;
 
   //! Our associated RSP interface (which we create)
   RspConnection *rsp;
@@ -81,11 +89,13 @@ private:
   //! Hash table for matchpoints
   MpHash *mpHash;
 
+  AapSim::Res  mLastException;
+
   // Main RSP request handler
   void  rspClientRequest ();
 
   // Handle the various RSP requests
-  void  rspReportException ();
+  void  rspReportException (AapSim::Res  res);
   void  rspReadAllRegs ();
   void  rspWriteAllRegs ();
   void  rspReadMem ();

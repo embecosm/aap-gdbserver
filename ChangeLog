@@ -1,3 +1,61 @@
+2015-04-06  Jeremy Bennett  <jeremy.bennett@embecosm.com>
+
+	Work in progress.  Code not yet working.
+
+	* .gitignore: Ignore Automake cache files
+	* Makefile.am: Add local m4 directory
+	* Makefile.in: Regenerated.
+	* aclocal.m4: Regenerated
+	* config.guess: Generated.
+	* config.h.in: Regenerated.
+	* config.sub: Generated.
+	* configure: Regenerated.
+	* configure.ac: Configure local macros and libtool, Specify C++11.
+	* doc/Makefile.in: Regenerated.
+	* ltmain.sh: Generated.
+	* m4/libtool.m4: Generated.
+	* m4/ltoptions.m4: Generated.
+	* m4/ltsugar.m4: Generated.
+	* m4/ltversion.m4: Generated.
+	* m4/lt~obsolete.m4: Generated.
+	* server/GdbServer.cpp (GdbServer::GdbServer): Instantiate AAP
+	simulator.
+	(GdbServer::rspClientRequest): Use simulator for continue and step
+	packets.
+	(GdbServer::rspReportException): Add argument for result type and
+	return accordingly.
+	(GdbServer::rspReadAllRegs): Rewrite to use new simulator.
+	(GdbServer::rspWriteAllRegs): Likewise.
+	(GdbServer::rspReadMem): Likewise.
+	* server/GdbServer.h (class GdbServer): Add AAP specific features.
+	* server/Makefile.am: Remove files not needed for server.
+	* server/Makefile.in: Regenerated.
+	* server/MpHash.cpp: Updated copyright notice.
+	* server/MpHash.h: Updated copyright notice.
+	* server/RspConnection.cpp: Updated copyright notice.
+	* server/RspConnection.h: Updated copyright notice.
+	* server/RspPacket.cpp: Updated copyright notice.
+	* server/RspPacket.h: Updated copyright notice.
+	* server/RspProxyMain.cpp: Renamed as ServerMain.cpp.
+	* server/RspProxyMain.h: Deleted.
+	* server/ServerMain.cpp: Renamed from RspProxyMain.cpp and updated
+	for new simulator.
+	* server/Utils.cpp: Updated copyright notice.
+	* server/Utils.h: Updated copyright notice.
+	* sim/AapSim.cpp: Created.
+	* sim/AapSim.h: Created.
+	* sim/Makefile.am: Remove unused files and add new files
+	* sim/Makefile.in: Regenerated.
+	* sim/MemAddr.cpp: Created.
+	* sim/MemAddr.h: Created.
+	* sim/MemoryBlock.cpp: Deleted.
+	* sim/MemoryBlock.h: Deleted.
+	* sim/Register.cpp: Deleted.
+	* sim/Register.h: Deleted.
+	* sim/SimMain.cpp: Created.
+	* sim/SimProc.cpp: Deleted.
+	* sim/SimProc.h: Deleted.
+
 2015-04-05  Jeremy Bennett  <jeremy.bennett@embecosm.com>
 
 	Initial, non working, check-in, based on the code from

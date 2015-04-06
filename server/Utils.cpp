@@ -1,11 +1,11 @@
 // ----------------------------------------------------------------------------
-// GDB Server Utilties: implementation
+// GDB Server Utilties: definition
 
-// Copyright (C) 2009  Embecosm Limited <info@embecosm.com>
+// Copyright (C) 2009, 2015 Embecosm Limited <www.embecosm.com>
 
 // Contributor Jeremy Bennett <jeremy.bennett@embecosm.com>
 
-// This file is part of the Embecosm Proxy RSP server.
+// This file is part of the Embecosm AAP GDB server and simulator.
 
 // This program is free software: you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License as published by
