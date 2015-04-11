@@ -42,7 +42,7 @@ MemAddr::MemAddr (void) :
 //! @param[in] _location  The location associated with this address, and whose
 //!                       meaning is dependent on whether this is code or data.
 
-MemAddr::MemAddr (const Space _space
+MemAddr::MemAddr (const Space _space,
 		  const uint32_t  _location) :
   mSpace (_space),
   mLocation (_location)
@@ -126,17 +126,12 @@ std::ostream &
 operator<< (std::ostream & s,
 	    MemAddr::Space  space)
 {
-  const char * name;
-
-  switch (c)
+  switch (space)
     {
-    case MemAddr::Space::CODE: name = "code";    break;
-    case MemAddr::Space::DATA: name = "data";    break;
-    default:                   name = "unknown"; break;
+    case MemAddr::Space::CODE: return s << "code";
+    case MemAddr::Space::DATA: return s << "data";
+    default:                   return s << "unknown";
     }
-
-  return  s << name;
-
 };	// operator<< ()
 
 

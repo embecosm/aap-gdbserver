@@ -42,7 +42,7 @@ AC_LANG(C++)
 
 # C++11compiler and install utility
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX_11
+CXXFLAGS="-O2 -g -Wall -Wextra -std=c++11"
 AC_PROG_INSTALL
 
 # This is GNU compliant source and uses GNU libraries
@@ -60,6 +60,10 @@ AC_CHECK_HEADERS([arpa/inet.h netdb.h netinet/in.h netinet/tcp.h poll.h \
 AC_CHECK_TYPES([uint8_t, uint32_t, uint64_t], , \
                [AC_MSG_FAILURE(fixed unsigned types not available)], \
                [#include <stdint.h>])
+
+# Export variables we have created
+AC_SUBST(CPPFLAGS)
+AC_SUBST(CXXFLAGS)
 
 # We want to create a Makefile
 AC_CONFIG_FILES([Makefile        \

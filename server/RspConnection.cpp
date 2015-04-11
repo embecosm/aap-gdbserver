@@ -36,6 +36,7 @@
 #include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <poll.h>
+#include <unistd.h>
 
 #include "RspConnection.h"
 #include "Utils.h"
@@ -133,14 +134,14 @@ RspConnection::rspConnect ()
       cerr << "ERROR: Cannot bind to RSP socket" << endl;
       return  false;
     }
-      
+
   // Listen for (at most one) client
   if (listen (tmpFd, 1))
     {
       cerr << "ERROR: Cannot listen on RSP socket" << endl;
       return  false;
     }
-  
+
   cout << "Listening for RSP on port " <<  portNum << endl << flush;
 
   // Accept a client which connects
@@ -470,7 +471,7 @@ RspConnection::putRspChar (char  c)
 			<<  strerror (errno) << endl;
 	      return  false;
 	    }
-      
+
 	  break;
 
 	case 0:

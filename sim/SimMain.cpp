@@ -19,8 +19,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include "config.h"
+
 #include <iostream>
 #include <cstdlib>
+#include <getopt.h>
 #include <unistd.h>
 
 #include "AapSim.h"
@@ -30,6 +33,7 @@ using std::atoi;
 using std::cerr;
 using std::cout;
 using std::endl;
+using std::string;
 
 
 //! Load an elf file
@@ -41,8 +45,8 @@ using std::endl;
 //! @param[in] objfile  The objectfile
 
 static void
-loadElf (AapSim      sim,
-	 const char *objfile)
+loadElf (AapSim      sim __attribute__ ((unused)),
+	 const char *objfile __attribute__ ((unused)))
 {
 }	// loadElf ()
 
@@ -126,12 +130,17 @@ main (int   argc,
   const char *objFile  = argv[optind];
 
   // Instantiate the simulator, load the object file, and start running.
-  AapSim sim ();
-  loadElf (sim, objfile);
+
+  AapSim  sim;
+  loadElf (sim, objFile);
 
   // Run until we get the result (which is in R0)
-  while (AapSim::Res::EXIT != sim.run ())
-    continue;
+
+  while (AapSim::Res::EXIT != sim.res ())
+    sim.run ();
+
+  if (debugLevel > 0)
+    cout << "Run complete" << endl;
 
   return  (int) sim.reg (0);
 

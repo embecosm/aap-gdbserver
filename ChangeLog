@@ -1,3 +1,80 @@
+2015-04-11  Jeremy Bennett  <jeremy.bennett@embecosm.com>
+
+	* Makefile.am: Reorder subdirs for dependencies.
+	* Makefile.in: Regenerated.
+	* configure: Regenerated.
+	* configure.ac: Remove AX_CXX_COMPILE_STDCXX_11 (appears obsolete)
+	and set flags explicitly.  Substitute CPPFLAGS and CXXFLAGS.
+	* doc/stamp-vti: Regenerated.
+	* doc/version.texi: Regenerated.
+	* server/GdbServer.cpp (GdbServer::GdbServer): Pass in debug level.
+	(GdbServer::rspClientRequest): Don't support I/i.  New step and
+	run calling conventions for c/C and s/S.
+	(GdbServer::rspReportException): Use new signal class and handle
+	lots more signals.
+	(GdbServer::rspReadAllRegs): Rewritten for new API.
+	(GdbServer::rspWriteAllRegs): Likewise.
+	(GdbServer::rspReadMem): Likewise.
+	(GdbServer::rspWriteMem): Likewise.
+	(GdbServer::rspReadReg): Likewise.
+	(GdbServer::rspWriteReg): Likewise.
+	(GdbServer::rspQuery): Strip out most (unsupported queries).
+	(GdbServer::rspCommand): Simplify.
+	(GdbServer::rspSet): Strip out all commands.
+	(GdbServer::rspVpkt): Likewise.
+	(GdbServer::rspWriteMemBin): Rewrite for new API.
+	(GdbServer::rspRemoveMatchpoint): Rewrite for new API and only
+	support memory breakpoints.
+	(GdbServer::rspInsertMatchpoint): Likewise.
+	(GdbServer::getSpace): Created.
+	(GdbServer::getLocation): Created.
+	(GdbServer::debugTraceRsp): Created.
+	* server/GdbServer.h: Add new methods.
+	* server/Makefile.am: Simplify to programs needed and pull in library.
+	* server/Makefile.in: regenerate.
+	* server/MpHash.cpp (MpHash::MpHash): Rename size method var.
+	(MpHash::~MpHash): Note need to remove allocated entries as well.
+	(MpHash::add): Rewrite to use MemAddr.
+	(MpHash::lookup): Likewise.
+	(MpHash::remove): Likewise.
+	(operator<<): Created.
+	* server/MpHash.h (struct MpEntry): Moved into MpHash class.
+	(class MpHash): Restructured as a single class.
+	* server/RspConnection.cpp: Include unistd.h.
+	* server/ServerMain.cpp (main): Add missing headers.
+	* server/Utils.cpp: Clean up layout.
+	(hex2Char): Remove const qualifier.
+	* server/Utils.h: Remove const qualifier on hex2Char
+	* sim/AapSim.cpp: Include config.h an add using for cerr and endl.
+	(AapSim::AapSim): New default contructor.
+	(AapSim::AapSim): Correct order of member setting.
+	(AapSim::reg): Base on rawReg.
+	(AapSim::pc): Base on rawPc.
+	(AapSim::mem): Base on rawMem
+	(AapSim::step): Rewrite to use step16 () and step32 ().
+	(AapSim::step16): Created.
+	(AapSim::step32): Created.
+	(AapSim::run): Rewrite to use step without return result.
+	(AapSim::rawReg): Renamed from reg with strict error handling.
+	(AapSim::rawPc): Renamed from pc with strict error handling.
+	(AapSim::rawMem): Renamed from mem with strict error handling.
+	(AapSim::numRegs): Created.
+	(AapSim::instr): Created.
+	(AapSim::res): Created.
+	(AapSim::validAddr): Handle status flags
+	(AapSim::signExt): Created.
+	(AapSim::readDataWord): Created.
+	(AapSim::writeDataWord): Created.
+	(AapSim::jump): Created.
+	(AapSim::carryBit): Created.
+	(AapSim::is16bit): Created.
+	(AapSim::fetch): Created.
+	* sim/AapSim.h: Updated for changes in methods.
+	* sim/MemAddr.cpp (MemAddr::MemAddr): Fix typo.
+	* sim/MemAddr.h (class MemAddr): Correct enum declaration.
+	* sim/SimMain.cpp (loadElf): Mark args unused.
+	(main): Tidy up minor syntax glitches.
+
 2015-04-06  Jeremy Bennett  <jeremy.bennett@embecosm.com>
 
 	Work in progress.  Code not yet working.

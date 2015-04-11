@@ -88,11 +88,12 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_aap_server_OBJECTS = GdbServer.$(OBJEXT) MpHash.$(OBJEXT) \
-	RspConnection.$(OBJEXT) RspPacket.$(OBJEXT) \
-	ServerMain.$(OBJEXT) Utils.$(OBJEXT)
+am_aap_server_OBJECTS = aap_server-GdbServer.$(OBJEXT) \
+	aap_server-MpHash.$(OBJEXT) aap_server-RspConnection.$(OBJEXT) \
+	aap_server-RspPacket.$(OBJEXT) aap_server-ServerMain.$(OBJEXT) \
+	aap_server-Utils.$(OBJEXT)
 aap_server_OBJECTS = $(am_aap_server_OBJECTS)
-aap_server_DEPENDENCIES = libaapsim.la
+aap_server_DEPENDENCIES = ${top_builddir}/sim/libaapsim.la
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -255,7 +256,8 @@ aap_server_SOURCES = GdbServer.cpp     \
                      Utils.cpp         \
                      Utils.h
 
-aap_server_LDADD = libaapsim.la
+aap_server_LDADD = ${top_builddir}/sim/libaapsim.la
+aap_server_CPPFLAGS = -I${top_srcdir}/sim
 all: all-am
 
 .SUFFIXES:
@@ -346,12 +348,12 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GdbServer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MpHash.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RspConnection.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RspPacket.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ServerMain.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aap_server-GdbServer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aap_server-MpHash.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aap_server-RspConnection.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aap_server-RspPacket.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aap_server-ServerMain.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aap_server-Utils.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -373,6 +375,90 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
+
+aap_server-GdbServer.o: GdbServer.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT aap_server-GdbServer.o -MD -MP -MF $(DEPDIR)/aap_server-GdbServer.Tpo -c -o aap_server-GdbServer.o `test -f 'GdbServer.cpp' || echo '$(srcdir)/'`GdbServer.cpp
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/aap_server-GdbServer.Tpo $(DEPDIR)/aap_server-GdbServer.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='GdbServer.cpp' object='aap_server-GdbServer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o aap_server-GdbServer.o `test -f 'GdbServer.cpp' || echo '$(srcdir)/'`GdbServer.cpp
+
+aap_server-GdbServer.obj: GdbServer.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT aap_server-GdbServer.obj -MD -MP -MF $(DEPDIR)/aap_server-GdbServer.Tpo -c -o aap_server-GdbServer.obj `if test -f 'GdbServer.cpp'; then $(CYGPATH_W) 'GdbServer.cpp'; else $(CYGPATH_W) '$(srcdir)/GdbServer.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/aap_server-GdbServer.Tpo $(DEPDIR)/aap_server-GdbServer.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='GdbServer.cpp' object='aap_server-GdbServer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o aap_server-GdbServer.obj `if test -f 'GdbServer.cpp'; then $(CYGPATH_W) 'GdbServer.cpp'; else $(CYGPATH_W) '$(srcdir)/GdbServer.cpp'; fi`
+
+aap_server-MpHash.o: MpHash.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT aap_server-MpHash.o -MD -MP -MF $(DEPDIR)/aap_server-MpHash.Tpo -c -o aap_server-MpHash.o `test -f 'MpHash.cpp' || echo '$(srcdir)/'`MpHash.cpp
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/aap_server-MpHash.Tpo $(DEPDIR)/aap_server-MpHash.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='MpHash.cpp' object='aap_server-MpHash.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o aap_server-MpHash.o `test -f 'MpHash.cpp' || echo '$(srcdir)/'`MpHash.cpp
+
+aap_server-MpHash.obj: MpHash.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT aap_server-MpHash.obj -MD -MP -MF $(DEPDIR)/aap_server-MpHash.Tpo -c -o aap_server-MpHash.obj `if test -f 'MpHash.cpp'; then $(CYGPATH_W) 'MpHash.cpp'; else $(CYGPATH_W) '$(srcdir)/MpHash.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/aap_server-MpHash.Tpo $(DEPDIR)/aap_server-MpHash.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='MpHash.cpp' object='aap_server-MpHash.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o aap_server-MpHash.obj `if test -f 'MpHash.cpp'; then $(CYGPATH_W) 'MpHash.cpp'; else $(CYGPATH_W) '$(srcdir)/MpHash.cpp'; fi`
+
+aap_server-RspConnection.o: RspConnection.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT aap_server-RspConnection.o -MD -MP -MF $(DEPDIR)/aap_server-RspConnection.Tpo -c -o aap_server-RspConnection.o `test -f 'RspConnection.cpp' || echo '$(srcdir)/'`RspConnection.cpp
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/aap_server-RspConnection.Tpo $(DEPDIR)/aap_server-RspConnection.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='RspConnection.cpp' object='aap_server-RspConnection.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o aap_server-RspConnection.o `test -f 'RspConnection.cpp' || echo '$(srcdir)/'`RspConnection.cpp
+
+aap_server-RspConnection.obj: RspConnection.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT aap_server-RspConnection.obj -MD -MP -MF $(DEPDIR)/aap_server-RspConnection.Tpo -c -o aap_server-RspConnection.obj `if test -f 'RspConnection.cpp'; then $(CYGPATH_W) 'RspConnection.cpp'; else $(CYGPATH_W) '$(srcdir)/RspConnection.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/aap_server-RspConnection.Tpo $(DEPDIR)/aap_server-RspConnection.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='RspConnection.cpp' object='aap_server-RspConnection.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o aap_server-RspConnection.obj `if test -f 'RspConnection.cpp'; then $(CYGPATH_W) 'RspConnection.cpp'; else $(CYGPATH_W) '$(srcdir)/RspConnection.cpp'; fi`
+
+aap_server-RspPacket.o: RspPacket.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT aap_server-RspPacket.o -MD -MP -MF $(DEPDIR)/aap_server-RspPacket.Tpo -c -o aap_server-RspPacket.o `test -f 'RspPacket.cpp' || echo '$(srcdir)/'`RspPacket.cpp
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/aap_server-RspPacket.Tpo $(DEPDIR)/aap_server-RspPacket.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='RspPacket.cpp' object='aap_server-RspPacket.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o aap_server-RspPacket.o `test -f 'RspPacket.cpp' || echo '$(srcdir)/'`RspPacket.cpp
+
+aap_server-RspPacket.obj: RspPacket.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT aap_server-RspPacket.obj -MD -MP -MF $(DEPDIR)/aap_server-RspPacket.Tpo -c -o aap_server-RspPacket.obj `if test -f 'RspPacket.cpp'; then $(CYGPATH_W) 'RspPacket.cpp'; else $(CYGPATH_W) '$(srcdir)/RspPacket.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/aap_server-RspPacket.Tpo $(DEPDIR)/aap_server-RspPacket.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='RspPacket.cpp' object='aap_server-RspPacket.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o aap_server-RspPacket.obj `if test -f 'RspPacket.cpp'; then $(CYGPATH_W) 'RspPacket.cpp'; else $(CYGPATH_W) '$(srcdir)/RspPacket.cpp'; fi`
+
+aap_server-ServerMain.o: ServerMain.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT aap_server-ServerMain.o -MD -MP -MF $(DEPDIR)/aap_server-ServerMain.Tpo -c -o aap_server-ServerMain.o `test -f 'ServerMain.cpp' || echo '$(srcdir)/'`ServerMain.cpp
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/aap_server-ServerMain.Tpo $(DEPDIR)/aap_server-ServerMain.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='ServerMain.cpp' object='aap_server-ServerMain.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o aap_server-ServerMain.o `test -f 'ServerMain.cpp' || echo '$(srcdir)/'`ServerMain.cpp
+
+aap_server-ServerMain.obj: ServerMain.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT aap_server-ServerMain.obj -MD -MP -MF $(DEPDIR)/aap_server-ServerMain.Tpo -c -o aap_server-ServerMain.obj `if test -f 'ServerMain.cpp'; then $(CYGPATH_W) 'ServerMain.cpp'; else $(CYGPATH_W) '$(srcdir)/ServerMain.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/aap_server-ServerMain.Tpo $(DEPDIR)/aap_server-ServerMain.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='ServerMain.cpp' object='aap_server-ServerMain.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o aap_server-ServerMain.obj `if test -f 'ServerMain.cpp'; then $(CYGPATH_W) 'ServerMain.cpp'; else $(CYGPATH_W) '$(srcdir)/ServerMain.cpp'; fi`
+
+aap_server-Utils.o: Utils.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT aap_server-Utils.o -MD -MP -MF $(DEPDIR)/aap_server-Utils.Tpo -c -o aap_server-Utils.o `test -f 'Utils.cpp' || echo '$(srcdir)/'`Utils.cpp
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/aap_server-Utils.Tpo $(DEPDIR)/aap_server-Utils.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='Utils.cpp' object='aap_server-Utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o aap_server-Utils.o `test -f 'Utils.cpp' || echo '$(srcdir)/'`Utils.cpp
+
+aap_server-Utils.obj: Utils.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT aap_server-Utils.obj -MD -MP -MF $(DEPDIR)/aap_server-Utils.Tpo -c -o aap_server-Utils.obj `if test -f 'Utils.cpp'; then $(CYGPATH_W) 'Utils.cpp'; else $(CYGPATH_W) '$(srcdir)/Utils.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/aap_server-Utils.Tpo $(DEPDIR)/aap_server-Utils.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='Utils.cpp' object='aap_server-Utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aap_server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o aap_server-Utils.obj `if test -f 'Utils.cpp'; then $(CYGPATH_W) 'Utils.cpp'; else $(CYGPATH_W) '$(srcdir)/Utils.cpp'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

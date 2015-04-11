@@ -38,7 +38,7 @@ class MemAddr
 public:
 
   //! Public type for the address space
-  enum class Space : {
+  enum class Space {
     CODE,
     DATA
   };
@@ -63,7 +63,7 @@ private:
   //! Which code space
   Space  mSpace;
 
-  //! The memory location.  Remember this may be a word address
+  //! The memory location.  Remember this may be a double word address for code
   uint32_t   mLocation;
 };
 

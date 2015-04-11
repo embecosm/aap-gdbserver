@@ -32,26 +32,29 @@
 
 //! Allocate the hash table
 //! @param[in] size  Number of slots in the  hash table. Defaults to
-//!                  DEFAULT_MP_HASH_SIZE.
+//!                  1021, the largest prime less than 2^10
+
 MpHash::MpHash (int  _size) :
-  size (_size)
+  mSize (_size)
 {
   // Allocate and clear the hash table
-  hashTab = new MpEntry *[size];
+  mHashTab = new MpHash::MpEntry *[mSize];
 
-  for (int  i = 0; i < size; i++)
-    {
-      hashTab[i] = NULL;
-    }
+  for (int  i = 0; i < mSize; i++)
+    mHashTab[i] = NULL;
+
 }	// MpHash ()
 
 
 //! Destructor
 
 //! Free the hash table
+
+//! @todo Free the space allocated for hash table entries.
+
 MpHash::~MpHash ()
 {
-  delete [] hashTab;
+  delete [] mHashTab;
 
 }	// ~MpHash ()
 
@@ -69,62 +72,32 @@ MpHash::~MpHash ()
 //! @param[in] type   The type of matchpoint
 //! @param[in] addr   The address of the matchpoint
 //! @para[in]  instr  The instruction to associate with the address
+
 void
 MpHash::add (MpType    type,
-	     uint32_t  addr,
-	     uint32_t  instr)
+	     MemAddr   addr,
+	     uint16_t  instr)
 {
-  int      hv    = addr % size;
-  MpEntry *curr;
+  int              hv    = addr.location () % mSize;
+  MpHash::MpEntry *curr;
 
   // See if we already have the entry
-  for(curr = hashTab[hv]; NULL != curr; curr = curr->next)
-    {
-      if ((type == curr->type) && (addr == curr->addr))
-	{
-	  return;		// We already have the entry
-	}
-    }
+
+  for(curr = mHashTab[hv]; NULL != curr; curr = curr->next)
+    if ((type == curr->type) && (addr == curr->addr))
+      return;
 
   // Insert the new entry at the head of the chain
-  curr = new MpEntry ();
-  
+  curr = new MpHash::MpEntry ();
+
   curr->type  = type;
   curr->addr  = addr;
   curr->instr = instr;
-  curr->next  = hashTab[hv];
+  curr->next  = mHashTab[hv];
 
-  hashTab[hv] = curr;
+  mHashTab[hv] = curr;
 
 }	// add ()
-
-
-//!Look up an entry in the matchpoint hash table
-
-//! The match must be on type AND addr.
-
-//! @param[in] type   The type of matchpoint
-//! @param[in] addr   The address of the matchpoint
-
-//! @return  The entry found, or NULL if the entry was not found
-MpEntry *
-MpHash::lookup (MpType    type,
-		uint32_t  addr)
-{
-  int      hv   = addr % size;
-
-  // Search
-  for (MpEntry *curr = hashTab[hv]; NULL != curr; curr = curr->next)
-    {
-      if ((type == curr->type) && (addr == curr->addr))
-	{
-	  return  curr;		// The entry found
-	}
-    }
-
-  return  NULL;			// Not found
-      
-}	// lookup ()
 
 
 //! Delete an entry from the matchpoint hash table
@@ -138,39 +111,32 @@ MpHash::lookup (MpType    type,
 
 //! @param[in]  type   The type of matchpoint
 //! @param[in]  addr   The address of the matchpoint
-//! @param[out] instr  Location to place the instruction found. If NULL (the
-//!                    default) then the instruction is not written back.
-
+//! @param[out] instr  Location to place the instruction found.
 //! @return  TRUE if an entry was found and deleted
+
 bool
-MpHash::remove (MpType    type,
-		uint32_t  addr,
-		uint32_t *instr)
+MpHash::remove (MpType     type,
+		MemAddr    addr,
+		uint16_t & instr)
 {
-  int      hv   = addr % size;
-  MpEntry *prev = NULL;
-  MpEntry *curr;
+  int              hv   = addr.location () % mSize;
+  MpHash::MpEntry *prev = NULL;
+  MpHash::MpEntry *curr;
 
   // Search
-  for (curr  = hashTab[hv]; NULL != curr; curr = curr->next)
+  for (curr  = mHashTab[hv]; NULL != curr; curr = curr->next)
     {
       if ((type == curr->type) && (addr == curr->addr))
 	{
 	  // Found - delete. Method depends on whether we are the head of
 	  // chain.
-	  if (NULL == prev)
-	    {
-	      hashTab[hv] = curr->next;
-	    }
-	  else
-	    {
-	      prev->next = curr->next;
-	    }
 
-	  if (NULL != instr)
-	    {
-	      *instr = curr->instr;	// Return the found instruction
-	    }
+	  if (NULL == prev)
+	    mHashTab[hv] = curr->next;
+	  else
+	    prev->next = curr->next;
+
+	  instr = curr->instr;	// Return the found instruction
 
 	  delete curr;
 	  return true;			// Success
@@ -182,6 +148,34 @@ MpHash::remove (MpType    type,
   return  false;			// Not found
 
 }	// remove ()
+
+
+//! Output operator for MpHash::MpType
+
+//! @param[in] s  The output stream
+//! @param[in] t  The type to put on the stream
+//! @return  The updated stream
+
+std::ostream &
+operator<< (std::ostream & s,
+	    MpHash::MpType  t)
+{
+  const char * name;
+
+  switch (t)
+    {
+    case MpHash::MpType::BP_MEMORY:   name = "sw break";     break;
+    case MpHash::MpType::BP_HARDWARE: name = "hw break";     break;
+    case MpHash::MpType::WP_WRITE:    name = "write watch";  break;
+    case MpHash::MpType::WP_READ:     name = "read watch";   break;
+    case MpHash::MpType::WP_ACCESS:   name = "access watch"; break;
+
+    default:                          name = "unknown";      break;
+    }
+
+  return  s << name;
+
+};	// operator<< ()
 
 
 // Local Variables:

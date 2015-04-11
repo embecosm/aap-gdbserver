@@ -33,4 +33,6 @@ aap_server_SOURCES = GdbServer.cpp     \
                      Utils.cpp         \
                      Utils.h
 
-aap_server_LDADD = libaapsim.la
+aap_server_LDADD = ${top_builddir}/sim/libaapsim.la
+
+aap_server_CPPFLAGS = -I${top_srcdir}/sim

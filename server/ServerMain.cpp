@@ -23,19 +23,28 @@
 // ----------------------------------------------------------------------------
 
 
-#include <iostream>
+#include "config.h"
+
 #include <cstdlib>
+#include <cstring>
+#include <getopt.h>
+#include <iostream>
 #include <unistd.h>
 
-#include "RspProxyMain.h"
-#include "SimProc.h"
+#include "AapSim.h"
 #include "GdbServer.h"
 
 
 using std::atoi;
+using std::cout;
 using std::cerr;
 using std::endl;
-using std::strcmp;
+using std::string;
+
+
+// Things to make getopt work
+extern char *optarg;
+extern int optind, opterr, optopt;
 
 
 //! Main routine.
@@ -125,12 +134,12 @@ main (int   argc,
   // The simulator and server.  If we return we hit some sort of problem
 
   AapSim *sim = new AapSim ();
-  GdbServer *gdbServer = new GdbServer (port, sim);
+  GdbServer *gdbServer = new GdbServer (port, sim, debugLevel);
 
   gdbServer->rspServer ();
 
   delete  gdbServer;
-  delete  cpu;
+  delete  sim;
 
   return EXIT_FAILURE;			// If we return it's a failure!
 

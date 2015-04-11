@@ -26,44 +26,9 @@
 #ifndef MP_HASH__H
 #define MP_HASH__H
 
-#include <stdint.h>
+#include <cstdint>
 
-
-//! Default size of the matchpoint hash table. Largest prime < 2^10
-#define DEFAULT_MP_HASH_SIZE  1021
-
-
-//! Enumeration of different types of matchpoint.
-
-//! These have explicit values matching the second digit of 'z' and 'Z'
-//! packets.
-enum MpType {
-  BP_MEMORY   = 0,
-  BP_HARDWARE = 1,
-  WP_WRITE    = 2,
-  WP_READ     = 3,
-  WP_ACCESS   = 4
-};
-
-
-class MpHash;
-
-//! A structure for a matchpoint hash table entry
-struct MpEntry
-{
-public:
-
-  friend class MpHash;		// The only one which can get at next
-
-  MpType    type;		//!< Type of matchpoint
-  uint32_t  addr;		//!< Address with the matchpoint
-  uint32_t  instr;		//!< Substituted instruction
-
-
-private:
-
-  MpEntry *next;		//!< Next in this slot
-};
+#include "MemAddr.h"
 
 
 //! A hash table for matchpoints
@@ -75,29 +40,58 @@ class MpHash
 {
 public:
 
-  // Constructor and destructor
-  MpHash (int  _size = DEFAULT_MP_HASH_SIZE);
+  //! Enumeration of different types of matchpoint.  These have explicit
+  //! values matching the second digit of 'z' and 'Z' packets.
+
+  enum class MpType : int {
+    BP_MEMORY   = 0,
+    BP_HARDWARE = 1,
+    WP_WRITE    = 2,
+    WP_READ     = 3,
+    WP_ACCESS   = 4
+  };
+
+  // Constructor and destructor. Default size is largest prime < 2^10
+
+  MpHash (int  _size = 1021);
   ~MpHash ();
 
   // Accessor methods
+
   void  add (MpType    type,
-	     uint32_t  addr,
-	     uint32_t  instr);
-  MpEntry *lookup (MpType    type,
-		   uint32_t  addr);
-  bool  remove (MpType    type,
-		uint32_t  addr,
-		uint32_t *instr = NULL);
+	     MemAddr   addr,
+	     uint16_t  instr);
+  bool  remove (MpType     type,
+		MemAddr    addr,
+		uint16_t & instr);
 
 private:
 
+  //! A structure for hash table entries
+  struct MpEntry
+  {
+  public:
+
+    MpType    type;		//!< Type of matchpoint
+    MemAddr   addr;		//!< Address with the matchpoint
+    uint16_t  instr;		//!< Substituted instruction
+    MpEntry  *next;		//!< Next in this slot
+  };
+
   //! The hash table
-  MpEntry **hashTab;
+  MpEntry **mHashTab;
 
   //! Size of the hash table
-  int  size;
+  int  mSize;
 
 };
+
+
+//! Output operators
+std::ostream &
+operator<< (std::ostream & s,
+	    MpHash::MpType  t);
+
 
 #endif	// MP_HASH__H
 

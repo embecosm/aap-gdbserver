@@ -25,9 +25,10 @@
 #ifndef GDB_SERVER__H
 #define GDB_SERVER__H
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "AapSim.h"
+#include "MemAddr.h"
 #include "MpHash.h"
 #include "RspConnection.h"
 #include "RspPacket.h"
@@ -45,7 +46,8 @@ public:
 
   // Constructor and destructor
   GdbServer (int      _port,
-	     AapSim * _sim);
+	     AapSim * _sim,
+	     int      _debugLevel);
   ~GdbServer ();
 
   // Main loop to listen for and service RSP requests.
@@ -55,19 +57,22 @@ public:
 private:
 
   //! Constants for the flag bits
-  MEMSPACE_CODE = 0x00000000;
-  MEMSPACE_DATA = 0x80000000;
-  MEMSPACE_MASK = 0x80000000;
+  static const uint32_t MEMSPACE_CODE = 0x00000000;
+  static const uint32_t MEMSPACE_DATA = 0x80000000;
+  static const uint32_t MEMSPACE_MASK = 0x80000000;
+
+  //! Breakpoint instruction (NOP R0,#3)
+  uint16_t BREAK_INSTR = 0x0000;
 
   //! Definition of GDB target signals.  Data taken from the GDB source. Only
   //! those we use defined here.
-  enum class TargetSignal : int {
-    GDB_SIGNAL_NONE =  0,
-    GDB_SIGNAL_ILL  =  4,
-    GDB_SIGNAL_TRAP =  5,
-    GDB_SIGNAL_EMT  =  6,
-    GDB_SIGNAL_EMT  =  7,
-    GDB_SIGNAL_SEGV = 11
+  enum class GdbSignal : int {
+    NONE =  0,
+    ILL  =  4,
+    TRAP =  5,
+    ABRT =  6,
+    EMT  =  7,
+    SEGV = 11
   };
 
   //! Constant for a thread id
@@ -76,8 +81,11 @@ private:
   //! Constant for a trap instruction
   static const uint8_t  PROXY_TRAP_INSTR = 0xa5;
 
-  //! Out associated simulated CPU
+  //! Our associated simulated CPU
   AapSim  *mSim;
+
+  //! Current debug level
+  int  mDebugLevel;
 
   //! Our associated RSP interface (which we create)
   RspConnection *rsp;
@@ -111,6 +119,10 @@ private:
   void  rspRemoveMatchpoint ();
   void  rspInsertMatchpoint ();
 
+  // Helper functions
+  MemAddr::Space  getSpace (uint32_t gdbAddr);
+  uint32_t  getLocation (uint32_t gdbAddr);
+  bool  debugTraceRsp (void);
 };	// GdbServer ()
 
 #endif	// GDB_SERVER__H

@@ -1,4 +1,3 @@
-// ----------------------------------------------------------------------------
 // GDB Server Utilties: definition
 
 // Copyright (C) 2009, 2015 Embecosm Limited <www.embecosm.com>
@@ -20,8 +19,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// ----------------------------------------------------------------------------
-
 
 #include <iostream>
 
@@ -33,7 +30,6 @@ using std::hex;
 using std::endl;
 
 
-//-----------------------------------------------------------------------------
 //!Utility to give the value of a hex char
 
 //! @param[in] ch  A character representing a hexadecimal digit. Done as -1,
@@ -42,7 +38,7 @@ using std::endl;
 
 //! @return  The value of the hex character, or -1 if the character is
 //!          invalid.
-//-----------------------------------------------------------------------------
+
 uint8_t
 Utils::char2Hex (int  c)
 {
@@ -53,12 +49,11 @@ Utils::char2Hex (int  c)
 }	// char2Hex ()
 
 
-//-----------------------------------------------------------------------------
 //! Utility mapping a value to hex character
 
 //! @param[in] d  A hexadecimal digit. Any non-hex digit returns a NULL char
-//-----------------------------------------------------------------------------
-const char
+
+char
 Utils::hex2Char (uint8_t  d)
 {
   static const char map [] = "0123456789abcdef"
@@ -83,7 +78,6 @@ Utils::hex2Char (uint8_t  d)
 }	// hex2Char ()
 
 
-//-----------------------------------------------------------------------------
 //! Convert a value to a hex digit string
 
 //! The supplied value is converted to a (numBytes * 2) digit hex string. The
@@ -96,7 +90,7 @@ Utils::hex2Char (uint8_t  d)
 //! @param[out] buf              the buffer for the text string
 //! @param[in]  numBytes         the number of significant bytes in val
 //! @param[in]  isLittleEndianP  true if this is a little endian architecture.
-//-----------------------------------------------------------------------------
+
 void
 Utils::val2Hex (uint64_t  val,
 		char     *buf,
@@ -108,10 +102,10 @@ Utils::val2Hex (uint64_t  val,
       for (int  n = 0 ; n < numBytes; n++)
 	{
 	  unsigned char  byte = val & 0xff;
-	  
+
 	  buf [n * 2    ] = hex2Char ((byte >> 4) & 0xf);
 	  buf [n * 2 + 1] = hex2Char ( byte       & 0xf);
-	  
+
 	  val = val / 256;
 	}
     }
@@ -120,10 +114,10 @@ Utils::val2Hex (uint64_t  val,
       for (int  n = numBytes - 1 ; n >= 0; n--)
 	{
 	  unsigned char  byte = val & 0xff;
-	  
+
 	  buf [n * 2    ] = hex2Char ((byte >> 4) & 0xf);
 	  buf [n * 2 + 1] = hex2Char ( byte       & 0xf);
-	  
+
 	  val = val / 256;
 	}
     }
@@ -133,7 +127,6 @@ Utils::val2Hex (uint64_t  val,
 }	// val2Hex ()
 
 
-//-----------------------------------------------------------------------------
 //! Convert a hex digit string to a register value
 
 //! The supplied (numBytes * 2) digit hex string
@@ -146,7 +139,7 @@ Utils::val2Hex (uint64_t  val,
 //! @param[in] isLittleEndianP  true if this is a little endian architecture.
 
 //! @return  The value to convert
-//-----------------------------------------------------------------------------
+
 uint64_t
 Utils::hex2Val (char *buf,
 		int   numBytes,
@@ -176,14 +169,13 @@ Utils::hex2Val (char *buf,
 }	// hex2Val ()
 
 
-//-----------------------------------------------------------------------------
 //! Convert an ASCII character string to pairs of hex digits
 
 //! Both source and destination are null terminated.
 
 //! @param[out] dest  Buffer to store the hex digit pairs (null terminated)
 //! @param[in]  src   The ASCII string (null terminated)                      */
-//-----------------------------------------------------------------------------
+
 void
 Utils::ascii2Hex (char *dest,
 		  char *src)
@@ -200,18 +192,17 @@ Utils::ascii2Hex (char *dest,
     }
 
   dest[i * 2] = '\0';
-	
+
 }	// ascii2hex ()
 
 
-//-----------------------------------------------------------------------------
 //! Convert pairs of hex digits to an ASCII character string
 
 //! Both source and destination are null terminated.
 
 //! @param[out] dest  The ASCII string (null terminated)
 //! @param[in]  src   Buffer holding the hex digit pairs (null terminated)
-//-----------------------------------------------------------------------------
+
 void
 Utils::hex2Ascii (char *dest,
 		  char *src)
@@ -230,7 +221,6 @@ Utils::hex2Ascii (char *dest,
 }	// hex2ascii ()
 
 
-//-----------------------------------------------------------------------------
 //! "Unescape" RSP binary data
 
 //! '#', '$' and '}' are escaped by preceding them by '}' and oring with 0x20.
@@ -241,7 +231,7 @@ Utils::hex2Ascii (char *dest,
 //! @para[in]  len   The number of bytes to be converted
 
 //! @return  The number of bytes AFTER conversion
-//-----------------------------------------------------------------------------
+
 int
 Utils::rspUnescape (char *buf,
 		    int   len)
