@@ -1,5 +1,10 @@
 2015-04-11  Jeremy Bennett  <jeremy.bennett@embecosm.com>
 
+	* sim/AapSim.cpp (AapSim::step32): Correct meanings of NOP
+	constants to be consistent with step16.
+
+2015-04-11  Jeremy Bennett  <jeremy.bennett@embecosm.com>
+
 	* Makefile.am: Reorder subdirs for dependencies.
 	* Makefile.in: Regenerated.
 	* configure: Regenerated.

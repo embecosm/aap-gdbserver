@@ -723,11 +723,11 @@ AapSim::step32 (void)
 
 	  switch (imm12)
 	    {
-	    case 0:  mRes = AapSim::Res::NONE;    break;
-	    case 1:  mRes = AapSim::Res::COUT;    break;
-	    case 2:  mRes = AapSim::Res::CERR;    break;
-	    case 3:  mRes = AapSim::Res::BREAK;   break;
-	    case 4:  mRes = AapSim::Res::EXIT;    break;
+	    case 0:  mRes = AapSim::Res::BREAK;   break;
+	    case 1:  mRes = AapSim::Res::NONE;    break;
+	    case 2:  mRes = AapSim::Res::EXIT;    break;
+	    case 3:  mRes = AapSim::Res::COUT;    break;
+	    case 4:  mRes = AapSim::Res::CERR;    break;
 	    default: mRes = AapSim::Res::ILLOPND; break;
 	    }
 
