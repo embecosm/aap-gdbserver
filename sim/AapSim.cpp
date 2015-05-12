@@ -65,10 +65,10 @@ AapSim::AapSim (const unsigned int  _numRegs,
   mRes (AapSim::Res::NONE)
 {
   // Validate
-  if ((4 > _numRegs) || (_numRegs > 32))
+  if ((4 > _numRegs) || (_numRegs > 64))
     {
       cerr << "*** ABORT ***: Invalid number of regs " << _numRegs
-	   << ": must be between 4 and 32. Exiting." << endl;
+	   << ": must be between 4 and 64. Exiting." << endl;
       exit (EXIT_FAILURE);
     }
 
