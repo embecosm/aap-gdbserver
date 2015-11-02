@@ -57,9 +57,9 @@ public:
 private:
 
   //! Constants for the flag bits
-  static const uint32_t MEMSPACE_CODE = 0x1000000;
-  static const uint32_t MEMSPACE_DATA = 0x0000000;
-  static const uint32_t MEMSPACE_MASK = 0x1000000;
+  static const uint32_t MEMSPACE_CODE = 0x08000000;
+  static const uint32_t MEMSPACE_DATA = 0x00000000;
+  static const uint32_t MEMSPACE_MASK = 0xf8000000;
 
   //! Breakpoint instruction (NOP R0,#3)
   uint16_t BREAK_INSTR = 0x0000;

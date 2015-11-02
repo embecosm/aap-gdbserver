@@ -1,5 +1,9 @@
 2015-11-02  Simon Cook  <simon.cook@embecosm.com>
 
+	* server/GdbServer.h: Update flag bitmasks.
+
+2015-11-02  Simon Cook  <simon.cook@embecosm.com>
+
 	* Makefile.in: Regenerated.
 	* aclocal.m4: Regenerated.
 	* configure: Regenerated.
