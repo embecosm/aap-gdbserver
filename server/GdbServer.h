@@ -27,7 +27,7 @@
 
 #include <cstdint>
 
-#include "AapSim.h"
+#include "AAPSimulator.h"
 #include "MemAddr.h"
 #include "MpHash.h"
 #include "RspConnection.h"
@@ -46,7 +46,7 @@ public:
 
   // Constructor and destructor
   GdbServer (int      _port,
-	     AapSim * _sim,
+	     AAPSim::AAPSimulator * _sim,
 	     int      _debugLevel);
   ~GdbServer ();
 
@@ -57,9 +57,9 @@ public:
 private:
 
   //! Constants for the flag bits
-  static const uint32_t MEMSPACE_CODE = 0x00000000;
-  static const uint32_t MEMSPACE_DATA = 0x80000000;
-  static const uint32_t MEMSPACE_MASK = 0x80000000;
+  static const uint32_t MEMSPACE_CODE = 0x1000000;
+  static const uint32_t MEMSPACE_DATA = 0x0000000;
+  static const uint32_t MEMSPACE_MASK = 0x1000000;
 
   //! Breakpoint instruction (NOP R0,#3)
   uint16_t BREAK_INSTR = 0x0000;
@@ -82,7 +82,7 @@ private:
   static const uint8_t  PROXY_TRAP_INSTR = 0xa5;
 
   //! Our associated simulated CPU
-  AapSim  *mSim;
+  AAPSim::AAPSimulator *mSim;
 
   //! Current debug level
   int  mDebugLevel;
@@ -97,13 +97,13 @@ private:
   //! Hash table for matchpoints
   MpHash *mpHash;
 
-  AapSim::Res  mLastException;
+  AAPSim::SimStatus  mLastException;
 
   // Main RSP request handler
   void  rspClientRequest ();
 
   // Handle the various RSP requests
-  void  rspReportException (AapSim::Res  res);
+  void  rspReportException (AAPSim::SimStatus res);
   void  rspReadAllRegs ();
   void  rspWriteAllRegs ();
   void  rspReadMem ();

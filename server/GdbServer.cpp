@@ -43,15 +43,16 @@ using std::hex;
 //! @param[in] _port  RSP port to use.
 //! @param[in] _sim   The simulated CPU
 GdbServer::GdbServer (int      _port,
-		      AapSim * _sim,
+		      AAPSim::AAPSimulator * _sim,
 		      int      _debugLevel) :
   mSim (_sim),
   mDebugLevel (_debugLevel),
-  mLastException (AapSim::Res::NONE)
+  mLastException (AAPSim::SimStatus::SIM_OK)
 {
   // Packet size should allow enough room for every register + 1 byte for an
   // end of string marker (our convenience). Assume worst case uint64_t regs.
-  pkt       = new RspPacket ((sizeof (uint64_t) * mSim->numRegs ()) + 1);
+  pkt       = new RspPacket ((sizeof (uint64_t) * mSim->getState().getNumRegs())
+                             + 1);
   rsp       = new RspConnection (_port, false);
   mpHash    = new MpHash ();
 
@@ -110,6 +111,7 @@ GdbServer::rspServer ()
 void
 GdbServer::rspClientRequest ()
 {
+  AAPSim::SimStatus status = AAPSim::SimStatus::SIM_OK;
   if (!rsp->getPkt (pkt))
     {
       rsp->rspClose ();			// Comms failure
@@ -153,8 +155,9 @@ GdbServer::rspClientRequest ()
       // Run.  We don't have signals, so we can
       // do C here as well.
 
-      mSim->run ();
-      rspReportException (mSim->res ());
+      while (status == AAPSim::SimStatus::SIM_OK)
+        status = mSim->step ();
+      rspReportException (status);
       return;
 
     case 'd':
@@ -248,8 +251,7 @@ GdbServer::rspClientRequest ()
       // Single step one machine instruction.  We don't have signals, we can
       // do S here as well.
 
-      mSim->step ();
-      rspReportException (mSim->res ());
+      rspReportException (mSim->step ());
       return;
 
     case 't':
@@ -300,7 +302,7 @@ GdbServer::rspClientRequest ()
 
 //! @param[in] res  The simulator result
 void
-GdbServer::rspReportException (AapSim::Res  res)
+GdbServer::rspReportException (AAPSim::SimStatus  res)
 {
   GdbServer::GdbSignal sig = GdbServer::GdbSignal::NONE;
 
@@ -308,16 +310,24 @@ GdbServer::rspReportException (AapSim::Res  res)
 
   switch (res)
     {
-    case AapSim::Res::EXIT:    sig = GdbServer::GdbSignal::EMT;
-    case AapSim::Res::COUT:    sig = GdbServer::GdbSignal::EMT;
-    case AapSim::Res::CERR:    sig = GdbServer::GdbSignal::EMT;
-    case AapSim::Res::BREAK:   sig = GdbServer::GdbSignal::TRAP;
-    case AapSim::Res::ILLINST: sig = GdbServer::GdbSignal::ILL;
-    case AapSim::Res::ILLOPND: sig = GdbServer::GdbSignal::ILL;
-    case AapSim::Res::MEMERR:  sig = GdbServer::GdbSignal::SEGV;
-    case AapSim::Res::REGERR:  sig = GdbServer::GdbSignal::ILL;
-    case AapSim::Res::NONE:    sig = GdbServer::GdbSignal::NONE;
-    default:              sig = GdbServer::GdbSignal::ABRT;
+    case AAPSim::SimStatus::SIM_QUIT:
+      sig = GdbServer::GdbSignal::EMT;
+      break;
+    case AAPSim::SimStatus::SIM_BREAKPOINT:
+      sig = GdbServer::GdbSignal::TRAP;
+      break;
+    case AAPSim::SimStatus::SIM_INVALID_INSN:
+      sig = GdbServer::GdbSignal::ILL;
+      break;
+    case AAPSim::SimStatus::SIM_TRAP:
+      sig = GdbServer::GdbSignal::ILL;
+      break;
+    case AAPSim::SimStatus::SIM_OK:
+      sig = GdbServer::GdbSignal::NONE;
+      break;
+    default:
+      sig = GdbServer::GdbSignal::ABRT;
+      break;
     }
 
   // Construct a signal received packet
@@ -345,14 +355,15 @@ GdbServer::rspReadAllRegs ()
 
   // The 16-bit general registers. GDB client expects them to be packed
   // according to target endianness (which is little).
-  for (unsigned int  regNum = 0; regNum < mSim->numRegs (); regNum++)
+  for (unsigned int regNum = 0; regNum < mSim->getState().getNumRegs(); regNum++)
     {
-      Utils::val2Hex (mSim->reg (regNum), &(pkt->data[pktSize]), 2, true);
+      Utils::val2Hex (mSim->getState ().getReg (regNum), &(pkt->data[pktSize]),
+                                                2, true);
       pktSize += 4;	// 2 chars per hex digit
     }
 
   // Add 32-bit PC on the end
-  Utils::val2Hex (mSim->pc ().location (), &(pkt->data[pktSize]), 4, true);
+  Utils::val2Hex (mSim->getState ().getPC (), &(pkt->data[pktSize]), 4, true);
   pktSize += 8;	// 2 chars per hex digit
 
   // Finalize the packet and send it
@@ -372,14 +383,15 @@ GdbServer::rspWriteAllRegs ()
   int  pktSize = 0;
 
   // The 16-bit general registers.  Endianness is little-endian.
-  for (unsigned int  r = 0; r < mSim->numRegs (); r++)
+  for (unsigned int  r = 0; r < mSim->getState ().getNumRegs (); r++)
     {
-      mSim->reg (r, Utils::hex2Val (&(pkt->data[pktSize]), 2, true));
+      mSim->getState ().setReg (r, Utils::hex2Val (&(pkt->data[pktSize]), 2,
+                                                   true));
       pktSize += 4;	// 2 chars per hex digit
     }
 
-  mSim->pc (MemAddr (MemAddr::Space::CODE,
-		     (uint32_t) Utils::hex2Val (&(pkt->data[pktSize]), 4, true)));
+  mSim->getState ().setPC ((uint32_t) Utils::hex2Val (&(pkt->data[pktSize]), 4,
+                                                      true));
 
   // Acknowledge OK
   pkt->packStr ("OK");
@@ -429,9 +441,10 @@ GdbServer::rspReadMem ()
       // Refill buffer from code memory
       for (off = 0; off < len; off += 2)
 	{
-	  uint16_t  w = mSim->mem (addr);
+	  uint16_t  w = mSim->getState ().getCodeMem (addr.location() * 2);
+          w |= (mSim->getState ().getCodeMem (addr.location() * 2 + 1) << 8);
 
-	  if (mSim->res () == AapSim::Res::NONE)
+	  if (/* Read was successful */ true)
 	    {
 	      // Little endian, so LS byte first
 	      pkt->data[off * 2]     = Utils::hex2Char ((w >>  4) & 0xf);
@@ -459,9 +472,9 @@ GdbServer::rspReadMem ()
       // Refill buffer from data memory
       for (off = 0; off < len; off++)
 	{
-	  uint8_t  c = mSim->mem (addr);
+	  uint8_t  c = mSim->getState ().getDataMem (addr.location ());
 
-	  if (mSim->res () == AapSim::Res::NONE)
+          if (/* Read was successful */ true)
 	    {
 	      pkt->data[off * 2]     = Utils::hex2Char ((c >>  4) & 0xf);
 	      pkt->data[off * 2 + 1] = Utils::hex2Char ( c        & 0xf);
@@ -539,9 +552,10 @@ GdbServer::rspWriteMem ()
 
 	      uint16_t  nyb1 = Utils::char2Hex (symDat[off * 2]);
 	      uint16_t  nyb2 = Utils::char2Hex (symDat[off * 2 + 1]);
-	      w = mSim->mem (addr);
+	      uint16_t  w = mSim->getState ().getCodeMem (addr.location() * 2);
+              w |= (mSim->getState().getCodeMem (addr.location() * 2 + 1) << 8);
 
-	      if (mSim->res () != AapSim::Res::NONE)
+	      if (/* Read was unsuccessful */ false)
 		{
 		  pkt->packStr ("E02");	// Bad address
 		  rsp->putPkt (pkt);
@@ -565,9 +579,10 @@ GdbServer::rspWriteMem ()
 	      w = (nyb1 < 12) | (nyb2 << 8) | (nyb3 << 4) | nyb4;
 	    }
 
-	  mSim->mem (addr, w);
+	  mSim->getState ().setCodeMem (addr.location() * 2, w & 0xff);
+          mSim->getState ().setCodeMem (addr.location() * 2 + 1, w >> 8);
 
-	  if (mSim->res () != AapSim::Res::NONE)
+	  if (/* Write was unsuccessful */ false)
 	    {
 	      pkt->packStr ("E03");	// Bad address
 	      rsp->putPkt (pkt);
@@ -586,9 +601,10 @@ GdbServer::rspWriteMem ()
 	  uint8_t  nyb1 = Utils::char2Hex (symDat[off * 2]);
 	  uint8_t  nyb2 = Utils::char2Hex (symDat[off * 2 + 1]);
 
-	  mSim->mem (addr, (uint8_t) ((nyb1 << 4) | nyb2));
+          mSim->getState ().setDataMem (addr.location(),
+                                        (uint8_t) ((nyb1 << 4) | nyb2));
 
-	  if (mSim->res () != AapSim::Res::NONE)
+	  if (/* Write was unsuccessful */ false)
 	    {
 	      pkt->packStr ("E04");	// Bad address
 	      rsp->putPkt (pkt);
@@ -632,37 +648,37 @@ GdbServer::rspReadReg ()
 
   // Get the relevant register. GDB client expects them to be packed according
   // to target endianness.
-  if (regNum > mSim->numRegs () + 1)
+  if (regNum > mSim->getState().getNumRegs () + 1)
     {
       pkt->packStr ("E02");
       rsp->putPkt (pkt);
       return;
     }
-  else if (regNum == mSim->numRegs () + 1)
+  else if (regNum == mSim->getState().getNumRegs () + 1)
     {
       // Last reg is status
       byteSize = 1;
-      value = mSim->pc ().location () >> 24;
+      value = mSim->getState ().getOverflow ();
     }
-  else if (regNum == mSim->numRegs ())
+  else if (regNum == mSim->getState().getNumRegs ())
     {
       // Penultimate reg is PC
       byteSize = 4;
-      value = mSim->pc ().location ();
+      value = mSim->getState ().getPC ();
     }
-  else if (regNum == mSim->numRegs ())
+  else if (regNum == mSim->getState().getNumRegs ())
     {
       // Last reg is PC
       byteSize = 4;
-      value = mSim->pc ().location ();
+      value = mSim->getState ().getPC ();
     }
   else
     {
       byteSize = 2;
-      value = mSim->reg (regNum);
+      value = mSim->getState ().getReg (regNum);
     }
 
-  if (mSim->res () != AapSim::Res::NONE)
+  if (/* Read was unsuccessful */ false)
     {
       pkt->packStr ("E03");
       rsp->putPkt (pkt);
@@ -703,33 +719,31 @@ GdbServer::rspWriteReg ()
 
   // Set the relevant register. GDB client expects them to be packed according
   // to target endianness.
-  if (regNum > mSim->numRegs () + 1)
+  if (regNum > mSim->getState ().getNumRegs () + 1)
     {
       pkt->packStr ("E02");
       rsp->putPkt (pkt);
       return;
     }
-  else if (regNum == mSim->numRegs () + 1)
+  else if (regNum == mSim->getState ().getNumRegs () + 1)
     {
-      // Last reg is status
-      uint32_t status = Utils::hex2Val (valstr, 1, true);
-      uint32_t loc = mSim->pc ().location ();
-      loc &= 0x00ffffff;
-      loc |= (status << 24);
-      mSim->pc ().location (loc);
+      // Do not (yet) support setting status
+      pkt->packStr ("E02");
+      rsp->putPkt (pkt);
+      return;
     }
-  else if (regNum == mSim->numRegs ())
+  else if (regNum == mSim->getState ().getNumRegs ())
     {
       // Penultimate reg is PC
-      mSim->pc ().location (Utils::hex2Val (valstr, 4, true));
+      mSim->getState ().setPC (Utils::hex2Val (valstr, 4, true));
     }
   else
     {
       // General register
-      mSim->reg (regNum, Utils::hex2Val (valstr, 2, true));
+      mSim->getState ().setReg (regNum, Utils::hex2Val (valstr, 2, true));
     }
 
-  if (mSim->res () == AapSim::Res::NONE)
+  if (/* Write was successful */ true)
     {
       pkt->packStr ("OK");
       rsp->putPkt (pkt);
@@ -886,9 +900,10 @@ GdbServer::rspWriteMemBin ()
 	  if ((off + 1) == len )
 	    {
 	      // Odd byte at the end
-	      w = mSim->mem (addr);
+	      w = mSim->getState ().getCodeMem (addr.location() * 2);
+              w |= mSim->getState ().getCodeMem (addr.location() * 2 + 1) << 8;
 
-	      if (mSim->res () != AapSim::Res::NONE)
+	      if (/* Read was unsuccessful */ false)
 		{
 		  pkt->packStr ("E02");	// Bad address
 		  rsp->putPkt (pkt);
@@ -906,9 +921,10 @@ GdbServer::rspWriteMemBin ()
 	      w = ((uint16_t) bindat[i + 1] << 8) | bindat[i];
 	    }
 
-	  mSim->mem (addr, w);
+	  mSim->getState ().setCodeMem(addr.location() * 2, w & 0xff);
+          mSim->getState ().setCodeMem(addr.location() * 2 + 1, w >> 8);
 
-	  if (mSim->res () != AapSim::Res::NONE)
+	  if (/* Write was unsuccessful */ false)
 	    {
 	      pkt->packStr ("E03");	// Bad address
 	      rsp->putPkt (pkt);
@@ -924,9 +940,9 @@ GdbServer::rspWriteMemBin ()
 
       for (int i = 0; i < len; i++)
 	{
-	  mSim->mem (addr, bindat[i]);
+	  mSim->getState ().setDataMem (addr.location(), bindat[i]);
 
-	  if (mSim->res () != AapSim::Res::NONE)
+	  if (/* Write was unsuccessful */ false)
 	    {
 	      pkt->packStr ("E04");	// Bad address
 	      rsp->putPkt (pkt);
@@ -1015,9 +1031,10 @@ GdbServer::rspRemoveMatchpoint ()
 
       // Remove the breakpoint from memory. The endianness of the instruction
       // matches that of the memory.
-      mSim->mem (addr, instr);
+      mSim->getState ().setCodeMem (addr.location() * 2, instr & 0xff);
+      mSim->getState ().setCodeMem (addr.location() * 2 + 1, instr >> 8);
 
-      if (mSim->res () == AapSim::Res::NONE)
+      if (/* Write was successful */ true)
 	{
 	  pkt->packStr ("OK");
 	  rsp->putPkt (pkt);
@@ -1104,9 +1121,10 @@ GdbServer::rspInsertMatchpoint ()
 
       // Software (memory) breakpoint. Extract the instruction.
 
-      instr = mSim->mem (addr);
+      instr = mSim->getState ().getCodeMem (addr.location() * 2);
+      instr |= mSim->getState ().getCodeMem (addr.location() * 2 + 1) << 8;
 
-      if (mSim->res () != AapSim::Res::NONE)
+      if (/* Read was unsuccessful */ false)
 	{
 	  cerr << "Warnign: failed to read memory when setting breakpoint at 0x"
 	       << hex << addr << dec << endl;
@@ -1118,9 +1136,10 @@ GdbServer::rspInsertMatchpoint ()
       // byte)
 
       mpHash->add (type, addr, instr);
-      mSim->mem (addr, BREAK_INSTR);
+      mSim->getState ().setCodeMem (addr.location() * 2, BREAK_INSTR & 0xff);
+      mSim->getState ().setCodeMem (addr.location() * 2 + 1, BREAK_INSTR >> 8);
 
-      if (mSim->res () == AapSim::Res::NONE)
+      if (/* Write was successful */ true)
 	{
 	  if (debugTraceRsp ())
 	    {
@@ -1171,7 +1190,7 @@ GdbServer::rspInsertMatchpoint ()
 MemAddr::Space
 GdbServer::getSpace (uint32_t gdbAddr)
 {
-  switch (uint32_t (gdbAddr && MEMSPACE_MASK))
+  switch (uint32_t (gdbAddr & MEMSPACE_MASK))
     {
     case MEMSPACE_CODE:  return  MemAddr::Space::CODE;
     case MEMSPACE_DATA:  return  MemAddr::Space::DATA;
@@ -1193,7 +1212,7 @@ GdbServer::getSpace (uint32_t gdbAddr)
 uint32_t
 GdbServer::getLocation (uint32_t gdbAddr)
 {
-  switch (uint32_t (gdbAddr && MEMSPACE_MASK))
+  switch (uint32_t (gdbAddr & MEMSPACE_MASK))
     {
     case MEMSPACE_CODE:  return (gdbAddr & ~MEMSPACE_MASK) >> 1;
     case MEMSPACE_DATA:  return  gdbAddr & ~MEMSPACE_MASK;

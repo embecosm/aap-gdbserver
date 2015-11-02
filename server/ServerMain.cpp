@@ -31,7 +31,10 @@
 #include <iostream>
 #include <unistd.h>
 
-#include "AapSim.h"
+#include "llvm/Support/ManagedStatic.h"
+#include "llvm/Support/PrettyStackTrace.h"
+#include "llvm/Support/TargetSelect.h"
+#include "AAPSimulator.h"
 #include "GdbServer.h"
 
 
@@ -41,6 +44,7 @@ using std::cerr;
 using std::endl;
 using std::string;
 
+using namespace AAPSim;
 
 // Things to make getopt work
 extern char *optarg;
@@ -131,9 +135,16 @@ main (int   argc,
       return  EXIT_FAILURE;
     }
 
+  // Initialize LLVM
+  llvm::PrettyStackTraceProgram X(argc, argv);
+  llvm::llvm_shutdown_obj Y;
+  llvm::InitializeAllTargetInfos();
+  llvm::InitializeAllTargetMCs();
+  llvm::InitializeAllDisassemblers();
+
   // The simulator and server.  If we return we hit some sort of problem
 
-  AapSim *sim = new AapSim ();
+  AAPSimulator *sim = new AAPSimulator ();
   GdbServer *gdbServer = new GdbServer (port, sim, debugLevel);
 
   gdbServer->rspServer ();

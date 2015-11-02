@@ -35,4 +35,9 @@ aap_server_SOURCES = GdbServer.cpp     \
 
 aap_server_LDADD = ${top_builddir}/sim/libaapsim.la
 
-aap_server_CPPFLAGS = -I${top_srcdir}/sim
+aap_server_CPPFLAGS = -I${top_srcdir}/sim \
+                      -I`llvm-config --src-root`/lib/Target/AAPSimulator \
+                      -I`llvm-config --includedir`
+
+aap_server_LDFLAGS = `llvm-config --ldflags` `llvm-config --libs aapsim` \
+                     `llvm-config --libs all-targets`

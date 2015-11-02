@@ -1,3 +1,35 @@
+2015-11-02  Simon Cook  <simon.cook@embecosm.com>
+
+	* Makefile.in: Regenerated.
+	* aclocal.m4: Regenerated.
+	* configure: Regenerated.
+	* compile: Added.
+	* doc/Makefile.in: Regenerated.
+	* doc/stamp-vti: Regnerated.
+	* doc/version.texi: Regenerated.
+	* server/GdbServer.cpp (GdbServer::GdbServer): Replace internal
+	simulation with LLVM based simulator.
+	(GdbServer::rspServer): Likewise.
+	(GdbServer::rspClientRequest): Likewise.
+	(GdbServer::rspReportException): Likewise.
+	(GdbServer::rspReadAllRegs): Likewise.
+	(GdbServer::rspWriteAllRegs): Likewise.
+	(GdbServer::rspReadMem): Likewise.
+	(GdbServer::rspWriteMem): Likewise.
+	(GdbServer::rspReadReg): Likewise.
+	(GdbServer::rspWriteReg): Likewise.
+	(GdbServer::rspWriteMemBin): Likewise.
+	(GdbServer::rspRemoveMatchpoint): Likewise.
+	(GdbServer::rspInsertMatchpoint): Likewise.
+	(GdbServer::getSpace): Fix bitmask matching.
+	(GdbServer::getLocation): Likewise.
+	* server/GdbServer.h: Replace internal simulation with LLVM based
+	simulator. Change bitmasks to match linker script.
+	* server/Makefile.am: Add use of llvm-config to load simulator.
+	* server/Makefile.in: Regenerated.
+	* server/ServerMain.cpp: Initilize LLVM and LLVM based simulator.
+	* sim/Makefile.in: Regenerated.
+
 2015-05-12  Jeremy Bennett  <jeremy.bennett@embecosm.com>
 
 	* sim/AapSim.cpp (AapSim::AapSim): Correct check for number of
