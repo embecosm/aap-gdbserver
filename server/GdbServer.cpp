@@ -355,12 +355,15 @@ GdbServer::rspReadAllRegs ()
 
   // The 16-bit general registers. GDB client expects them to be packed
   // according to target endianness (which is little).
+  bool tracestate = mSim->getState ().getTracing ();
+  mSim->getState ().setTracing (false);
   for (unsigned int regNum = 0; regNum < mSim->getState().getNumRegs(); regNum++)
     {
       Utils::val2Hex (mSim->getState ().getReg (regNum), &(pkt->data[pktSize]),
                                                 2, true);
       pktSize += 4;	// 2 chars per hex digit
     }
+  mSim->getState ().setTracing (tracestate);
 
   // Add 32-bit PC on the end
   Utils::val2Hex (mSim->getState ().getPC (), &(pkt->data[pktSize]), 4, true);

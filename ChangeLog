@@ -1,3 +1,8 @@
+2015-11-05  Simon Cook  <simon.cook@embecosm.com>
+
+	* server/GdbServer.cpp (GdbServer::rspReadAllRegs): Turn off tracing
+	when reading all registers.
+
 2015-11-02  Simon Cook  <simon.cook@embecosm.com>
 
 	* server/GdbServer.h: Update flag bitmasks.
