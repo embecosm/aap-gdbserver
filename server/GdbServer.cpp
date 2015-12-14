@@ -47,7 +47,8 @@ GdbServer::GdbServer (int      _port,
 		      int      _debugLevel) :
   mSim (_sim),
   mDebugLevel (_debugLevel),
-  mLastException (AAPSim::SimStatus::SIM_OK)
+  mLastException (AAPSim::SimStatus::SIM_OK),
+  clock_timeout(0)
 {
   // Packet size should allow enough room for every register + 1 byte for an
   // end of string marker (our convenience). Assume worst case uint64_t regs.
@@ -118,6 +119,8 @@ GdbServer::rspClientRequest ()
       return;
     }
 
+  clock_t timeout_start;
+
   switch (pkt->data[0])
     {
     case '!':
@@ -154,9 +157,16 @@ GdbServer::rspClientRequest ()
     case 'C':
       // Run.  We don't have signals, so we can
       // do C here as well.
+      timeout_start = std::clock();
 
-      while (status == AAPSim::SimStatus::SIM_OK)
+      while (status == AAPSim::SimStatus::SIM_OK) {
+        if (clock_timeout != 0 && ((clock() - timeout_start) > clock_timeout))
+          {
+            rspReportException (AAPSim::SimStatus::SIM_TIMEOUT);
+            return;
+          }
         status = mSim->step ();
+      }
       rspReportException (status);
       return;
 
@@ -324,6 +334,9 @@ GdbServer::rspReportException (AAPSim::SimStatus  res)
       break;
     case AAPSim::SimStatus::SIM_OK:
       sig = GdbServer::GdbSignal::NONE;
+      break;
+    case AAPSim::SimStatus::SIM_TIMEOUT:
+      sig = GdbServer::GdbSignal::XCPU;
       break;
     default:
       sig = GdbServer::GdbSignal::ABRT;
@@ -802,10 +815,16 @@ void
 GdbServer::rspCommand ()
 {
   char *cmd = new char[pkt->getBufSize ()];
+  int   timeout;
 
   Utils::hex2Ascii (cmd, &(pkt->data[strlen ("qRcmd,")]));
 
   cout << "RSP trace: qCmd," << cmd << endl;
+
+  if (1 == sscanf (cmd, "timeout %d", &timeout))
+    {
+      clock_timeout = timeout * CLOCKS_PER_SEC;
+    }
 
   pkt->packStr ("OK");
   rsp->putPkt (pkt);

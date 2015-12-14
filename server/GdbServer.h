@@ -72,7 +72,8 @@ private:
     TRAP =  5,
     ABRT =  6,
     EMT  =  7,
-    SEGV = 11
+    SEGV = 11,
+    XCPU = 24
   };
 
   //! Constant for a thread id
@@ -96,6 +97,9 @@ private:
 
   //! Hash table for matchpoints
   MpHash *mpHash;
+
+  //! Timeout for continue.
+  clock_t clock_timeout;
 
   AAPSim::SimStatus  mLastException;
 
